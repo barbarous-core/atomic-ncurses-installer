@@ -15,35 +15,41 @@
 #define MAX_TZ_LEN       64
 #define MAX_KB_LEN       32
 #define MAX_PATH_LEN    256
-#define MAX_RPMS        128
+#define MAX_RPMS        512
 #define MAX_RPM_LEN     256
-#define MAX_BINS        128
+#define MAX_BINS        512
 #define MAX_BIN_LEN     256
 #define MAX_DOTFILES    128
 #define MAX_DOTFILE_LEN 256
+#define MAX_SSH_LEN    2048
+#define MAX_HOSTNAME_LEN 64
+#define MAX_EDITION_LEN  32
 
 /* ─── Installer state (passed through every screen) ──────────────────────── */
 typedef struct {
-    /* Step 1 – Disk */
+    /* Step 1 – Edition */
+    char edition[MAX_EDITION_LEN];
+
+    /* Step 2 – Data Collection */
+    char hostname[MAX_HOSTNAME_LEN];
+    char ssh_key[MAX_SSH_LEN];
     char disk[MAX_DISK_LEN];          /* e.g. /dev/sda            */
 
-    /* Step 2 – User */
+    /* Step 3 – User (Keeping for legacy or future use, but hostname/ssh are priority) */
     char username[MAX_USER_LEN];
     char password_hash[MAX_HASH_LEN]; /* openssl-generated sha512 */
 
-    /* Step 3 – Locale */
+    /* Step 4 – Locale */
     char keyboard[MAX_KB_LEN];        /* e.g. us, fr, de          */
     char timezone[MAX_TZ_LEN];        /* e.g. America/New_York    */
 
-    /* Step 4 – RPM packages */
+    /* Data from matrix.csv */
     char rpms[MAX_RPMS][MAX_RPM_LEN];
     int  rpm_count;
 
-    /* Step 5 – Bins to inject */
     char bins[MAX_BINS][MAX_BIN_LEN]; /* relative paths from ISO  */
     int  bin_count;
 
-    /* Step 6 – Dotfiles */
     char dotfiles[MAX_DOTFILES][MAX_DOTFILE_LEN];
     int  dotfile_count;
 

@@ -18,39 +18,32 @@ static void draw_summary(const installer_state_t *st, bool done, bool success, c
     ui_center(stdscr, row, "Installation Summary", CP_ACCENT, A_BOLD);
     row += 2;
     
-    int col1 = (bw / 2) - 30;
-    int col2 = (bw / 2) + 5;
+    int col1 = (bw / 2) - 25;
     if (col1 < 2) col1 = 2;
-    if (col2 < 20) col2 = 20;
 
     attron(COLOR_PAIR(CP_NORMAL));
+    mvprintw(row++, col1, "Target Edition:   %s", st->edition);
+    mvprintw(row++, col1, "System Hostname:  %s", st->hostname);
+    mvprintw(row++, col1, "SSH Public Key:   %s", st->ssh_key[0] ? "[Provided]" : "[None]");
     mvprintw(row++, col1, "Target Disk:      %s", st->disk[0] ? st->disk : "None");
-    mvprintw(row++, col1, "Username:         %s", st->username);
-    mvprintw(row++, col1, "Password Hash:    [Set]");
-    mvprintw(row++, col1, "Keyboard Layout:  %s", st->keyboard);
-    mvprintw(row++, col1, "Timezone:         %s", st->timezone);
     row++;
-    mvprintw(row++, col1, "RPM Packages:     %d selected", st->rpm_count);
-    mvprintw(row++, col1, "Binaries:         %d selected", st->bin_count);
-    mvprintw(row++, col1, "Dotfiles:         %d selected", st->dotfile_count);
-    row++;
-    mvprintw(row++, col1, "Output File:      %s", st->output_path);
+    mvprintw(row++, col1, "Ignition File:    %s", st->output_path);
     attroff(COLOR_PAIR(CP_NORMAL));
 
     row += 2;
 
     if (done) {
         if (success) {
-            ui_center(stdscr, row, "✅ Ignition file generated successfully!", CP_SUCCESS, A_BOLD);
+            ui_center(stdscr, row, "✅ Installation starting / Ignition written!", CP_SUCCESS, A_BOLD);
             row++;
             ui_center(stdscr, row, msg, CP_NORMAL, 0);
         } else {
-            ui_center(stdscr, row, "❌ Error generating Ignition file!", CP_DANGER, A_BOLD);
+            ui_center(stdscr, row, "❌ Error during installation/generation!", CP_DANGER, A_BOLD);
             row++;
             ui_center(stdscr, row, msg, CP_DANGER, 0);
         }
     } else {
-        ui_center(stdscr, row, "Press ENTER to generate the Ignition file, or ← to go back.", CP_KEY, A_BOLD);
+        ui_center(stdscr, row, "Press ENTER to generate Ignition and start installation.", CP_KEY, A_BOLD);
     }
 
     int btn_row = LINES - FOOTER_H - 2;
@@ -58,7 +51,7 @@ static void draw_summary(const installer_state_t *st, bool done, bool success, c
         ui_button(stdscr, btn_row, (bw - 12)/2, "  Quit  ", true);
     } else {
         ui_button(stdscr, btn_row, 3,       "  ← Back  ", false);
-        ui_button(stdscr, btn_row, bw - 18, "  Generate  ", true);
+        ui_button(stdscr, btn_row, bw - 18, "  Install  ", true);
     }
 
     refresh();
@@ -66,47 +59,30 @@ static void draw_summary(const installer_state_t *st, bool done, bool success, c
 
 static bool generate_ignition(const installer_state_t *st)
 {
-    /* This is a simple generator that creates a valid Ignition v3.3.0 JSON file.
-     * In a production environment, you might use Butane, but for this standalone TUI,
-     * writing the JSON directly ensures we don't need Go or Butane installed. */
-    
     FILE *f = fopen(st->output_path, "w");
     if (!f) return false;
 
     fprintf(f, "{\n");
     fprintf(f, "  \"ignition\": { \"version\": \"3.3.0\" },\n");
     
-    /* passwd */
-    fprintf(f, "  \"passwd\": {\n");
-    fprintf(f, "    \"users\": [\n");
+    /* storage: hostname and basic files */
+    fprintf(f, "  \"storage\": {\n");
+    fprintf(f, "    \"files\": [\n");
     fprintf(f, "      {\n");
-    fprintf(f, "        \"name\": \"%s\",\n", st->username);
-    fprintf(f, "        \"passwordHash\": \"%s\",\n", st->password_hash);
-    fprintf(f, "        \"groups\": [ \"wheel\" ]\n");
+    fprintf(f, "        \"path\": \"/etc/hostname\",\n");
+    fprintf(f, "        \"contents\": { \"source\": \"data:,%s%%0A\" },\n", st->hostname);
+    fprintf(f, "        \"mode\": 420\n");
     fprintf(f, "      }\n");
     fprintf(f, "    ]\n");
     fprintf(f, "  },\n");
 
-    /* storage */
-    fprintf(f, "  \"storage\": {\n");
-    fprintf(f, "    \"files\": [\n");
-    
-    /* Keyboard layout file */
+    /* passwd: core user with SSH key */
+    fprintf(f, "  \"passwd\": {\n");
+    fprintf(f, "    \"users\": [\n");
     fprintf(f, "      {\n");
-    fprintf(f, "        \"path\": \"/etc/vconsole.conf\",\n");
-    fprintf(f, "        \"contents\": { \"source\": \"data:,KEYMAP%%3D%s%%0A\" },\n", st->keyboard);
-    fprintf(f, "        \"mode\": 420\n");
-    fprintf(f, "      }\n");
-    
-    /* Note: Timezone is typically set via a symlink in Ignition:
-     * "links": [ { "path": "/etc/localtime", "target": "../usr/share/zoneinfo/..." } ]
-     * But we are keeping it simple for this demonstration. */
-     
-    fprintf(f, "    ],\n");
-    fprintf(f, "    \"links\": [\n");
-    fprintf(f, "      {\n");
-    fprintf(f, "        \"path\": \"/etc/localtime\",\n");
-    fprintf(f, "        \"target\": \"../usr/share/zoneinfo/%s\"\n", st->timezone);
+    fprintf(f, "        \"name\": \"core\",\n");
+    fprintf(f, "        \"sshAuthorizedKeys\": [ \"%s\" ],\n", st->ssh_key);
+    fprintf(f, "        \"groups\": [ \"wheel\", \"sudo\" ]\n");
     fprintf(f, "      }\n");
     fprintf(f, "    ]\n");
     fprintf(f, "  },\n");
@@ -140,7 +116,7 @@ int screen_generate(installer_state_t *st)
     char msg[512] = {0};
     
     while (1) {
-        ui_draw_header("Step 7 of 7  —  Summary & Generate");
+        ui_draw_header("Step 4 of 4  —  Summary & Installation");
         ui_draw_footer(footer, 3);
         draw_summary(st, done, success, msg);
 

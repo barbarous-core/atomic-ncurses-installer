@@ -17,12 +17,10 @@ static const char *LOGO_SM[] = {
 };
 
 static const char *STEPS[] = {
-    " Disk & partition selection",
-    " User account & password",
-    " Keyboard layout & timezone",
-    " RPM package selection",
-    " Binary & dotfile injection",
-    " Ignition file generation",
+    " OS Edition Selection (Core, Station, Studio. Edge, Lab, Touch)",
+    " System Configuration (Hostname & SSH)",
+    " Target Disk Selection",
+    " Ignition & System Installation",
 };
 #define NSTEPS ((int)(sizeof(STEPS)/sizeof(STEPS[0])))
 
@@ -64,7 +62,7 @@ static void draw_welcome(void)
 
     /* ── Subtitle ── */
     int row = logo_y + logo_rows + 1;
-    ui_center(box, row, "Fedora CoreOS  ◆  Ignition File Generator", CP_DIM, A_BOLD);
+    ui_center(box, row, "Barbarous OS  ◆  System Installer", CP_DIM, A_BOLD);
     row++;
 
     /* ── Divider ── */

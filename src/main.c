@@ -5,12 +5,9 @@
 #include "installer.h"
 #include "ui.h"
 #include "screens/welcome.h"
+#include "screens/edition.h"
+#include "screens/config.h"
 #include "screens/disk.h"
-#include "screens/user.h"
-#include "screens/locale.h"
-#include "screens/packages.h"
-#include "screens/binaries.h"
-#include "screens/dotfiles.h"
 #include "screens/generate.h"
 
 int main(void)
@@ -54,34 +51,21 @@ int main(void)
                 break;
 
             case 1:
-                nav = screen_disk(&state);
+                nav = screen_edition(&state);
                 break;
 
             case 2:
-                nav = screen_user(&state);
+                nav = screen_config(&state);
                 break;
 
             case 3:
-                nav = screen_locale(&state);
+                nav = screen_disk(&state);
                 break;
 
             case 4:
-                nav = screen_packages(&state);
-                break;
-
-            case 5:
-                nav = screen_binaries(&state);
-                break;
-
-            case 6:
-                nav = screen_dotfiles(&state);
-                break;
-
-            case 7:
                 nav = screen_generate(&state);
                 break;
 
-            /* Placeholder: future screens will be wired here */
             default:
                 nav = NAV_QUIT;
                 break;
