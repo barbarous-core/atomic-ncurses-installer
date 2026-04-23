@@ -13,12 +13,12 @@
   │            Fedora CoreOS  ◆  Ignition File Generator                         │
   │  ─────────────────────────────────────────────────────────────────────────── │
   │           This installer will guide you through:                             │
-  │             ◆  Disk & partition selection                                    │
-  │             ◆  User account & password                                       │
-  │             ◆  Keyboard layout & timezone                                    │
-  │             ◆  RPM package selection                                         │
-  │             ◆  Binary & dotfile injection                                    │
-  │             ◆  Ignition file generation                                      │
+  │             ◆  Locale, Timezone & User Configuration                         │
+  │             ◆  Hostname & SSH Key Setup                                      │
+  │             ◆  Barbarous OS Edition Selection                                │
+  │             ◆  Package & Binary Customization                                │
+  │             ◆  Target Disk Selection & Verification                          │
+  │             ◆  Final Summary & System Installation                           │
   │                        [ ENTER  Begin ]                                      │
   └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -42,13 +42,12 @@ The generated Ignition file handles:
 
 | Step | Feature |
 |------|---------|
-| 1 | **Disk selection** — enumerate block devices via `lsblk`, pick install target |
-| 2 | **User account** — username + salted SHA-512 password hash (`openssl passwd`) |
-| 3 | **Locale** — keyboard layout (XKB) + timezone (zoneinfo) |
-| 4 | **RPM packages** — select packages to layer with `rpm-ostree` from local ISO |
-| 5 | **Binary injection** — copy binaries from ISO into `/usr/local/bin` |
-| 6 | **Dotfile injection** — deploy dotfiles to the user's home directory |
-| 7 | **IGN generation** — write `barbarous.ign` (or custom path) to disk |
+| 1 | **Locale & User** — Keyboard layout, timezone, and user credentials |
+| 2 | **Hostname & SSH** — Set system hostname and generate/inject SSH keys |
+| 3 | **OS Edition** — Select Barbarous OS flavor (Core, Station, Studio, etc.) |
+| 4 | **RPM & Binaries** — Select tool categories from a matrix of 100+ tools |
+| 5 | **Disk Selection** — Pick target disk for installation with verification |
+| 6 | **IGN Generation** — Final summary, dotfile toggle, and file writing |
 
 ---
 
@@ -143,16 +142,15 @@ atomic-ncurses-installer/
     ├── installer.h         # shared installer_state_t struct
     ├── installer.c         # state initialisation / defaults
     ├── ui.h                # widget API declarations
-    ├── ui.c                # header · footer · box · button · readline · msgbox
+    ├── ui.c                # header · footer · box · button · readline
     └── screens/
         ├── welcome.h/c     # ✅ Step 0 – splash / overview          [done]
-        ├── disk.h/c        # ✅ Step 1 – block device selection     [done]
-        ├── user.h/c        # ✅ Step 2 – user + password            [done]
-        ├── locale.h/c      # ✅ Step 3 – keyboard + timezone        [done]
-        ├── packages.h/c    # ✅ Step 4 – RPM package picker         [done]
-        ├── binaries.h/c    # ✅ Step 5 – binary injection           [done]
-        ├── dotfiles.h/c    # ✅ Step 6 – dotfile injection          [done]
-        └── generate.h/c    # ✅ Step 7 – IGN file writer + summary  [done]
+        ├── locale.h/c      # ✅ Step 1 – locale, TZ & user          [done]
+        ├── config.h/c      # ✅ Step 2 – hostname & SSH keys        [done]
+        ├── edition.h/c     # ✅ Step 3 – OS edition selection       [done]
+        ├── selection.h/c   # ✅ Step 4 – RPM & binary matrix        [done]
+        ├── disk.h/c        # ✅ Step 5 – target disk selection      [done]
+        └── generate.h/c    # ✅ Step 6 – summary & IGN generation   [done]
 ```
 
 ---
@@ -164,13 +162,12 @@ main.c
   └── installer_init()        set sane defaults into installer_state_t
   └── screen router loop
         case 0 → screen_welcome()   ─┐
-        case 1 → screen_disk()       │  each screen:
-        case 2 → screen_user()       │   • reads/writes installer_state_t
-        case 3 → screen_locale()     │   • returns NAV_NEXT / NAV_PREV / NAV_QUIT
-        case 4 → screen_packages()   │
-        case 5 → screen_binaries()  ─┘
-        case 6 → screen_dotfiles()
-        case 7 → screen_generate()  → writes barbarous.ign
+        case 1 → screen_locale()     │  each screen:
+        case 2 → screen_config()     │   • reads/writes installer_state_t
+        case 3 → screen_edition()    │   • returns NAV_NEXT / NAV_PREV / NAV_QUIT
+        case 4 → screen_selection()  │
+        case 5 → screen_disk()      ─┘
+        case 6 → screen_generate()  → writes barbarous.ign
 ```
 
 Every screen is self-contained and only communicates through the shared
