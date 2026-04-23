@@ -23,7 +23,7 @@ static void draw_config_screen(const installer_state_t *st, int focus, const cha
     int top = ui_body_top();
     
     int row = top + 2;
-    ui_center(stdscr, row, "System Configuration", CP_NORMAL, A_BOLD);
+    ui_center(stdscr, row, "Hostname and SSH key", CP_NORMAL, A_BOLD);
     row += 2;
     ui_center(stdscr, row, "Set your hostname and provide an SSH public key for access.", CP_DIM, A_NORMAL);
     row += 1;
@@ -125,7 +125,7 @@ int screen_config(installer_state_t *st)
     };
 
     while (1) {
-        ui_draw_header("Step 4 of 6  —  System Configuration");
+        ui_draw_header("Step 2 of 6  —  Hostname and SSH key");
         ui_draw_footer(footer, 4);
         draw_config_screen(st, focus, err_msg);
 

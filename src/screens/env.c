@@ -107,7 +107,7 @@ int screen_env(installer_state_t *st)
     };
 
     while (1) {
-        ui_draw_header("Step 2 of 6  —  Environment Check");
+        ui_draw_header("Step 3 of 6  —  Environment Check");
         ui_draw_footer(footer, 4);
         draw_env_screen(devs, count, selected, scroll);
         

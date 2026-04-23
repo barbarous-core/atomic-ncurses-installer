@@ -57,13 +57,13 @@ int main(void)
                 nav = screen_locale(&state);
                 break;
             case 2:
-                nav = screen_env(&state);
+                nav = screen_config(&state);
                 break;
             case 3:
                 nav = screen_edition(&state);
                 break;
             case 4:
-                nav = screen_config(&state);
+                nav = screen_env(&state);
                 break;
             case 5:
                 nav = screen_disk(&state);

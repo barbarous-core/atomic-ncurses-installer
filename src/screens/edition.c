@@ -73,7 +73,7 @@ int screen_edition(installer_state_t *st)
     };
 
     while (1) {
-        ui_draw_header("Step 3 of 6  —  Edition Selection");
+        ui_draw_header("Step 4 of 6  —  Edition Selection");
         ui_draw_footer(footer, 4);
         draw_edition_screen(selected);
 
