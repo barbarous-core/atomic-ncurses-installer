@@ -97,6 +97,21 @@ static void draw_summary(installer_state_t *st, bool done, bool success, const c
     refresh();
 }
 
+static void sanitize_pkg_name(char *dst, const char *src, int max_len)
+{
+    int j = 0;
+    bool in_parens = false;
+    for (int i = 0; src[i] != '\0' && j < max_len - 1; i++) {
+        if (src[i] == '(') in_parens = true;
+        else if (src[i] == ')') in_parens = false;
+        else if (!in_parens) {
+            if (src[i] == '/') dst[j++] = ' ';
+            else dst[j++] = src[i];
+        }
+    }
+    dst[j] = '\0';
+}
+
 static bool generate_ignition(const installer_state_t *st)
 {
     FILE *f = fopen(st->output_path, "w");
@@ -105,7 +120,7 @@ static bool generate_ignition(const installer_state_t *st)
     fprintf(f, "{\n");
     fprintf(f, "  \"ignition\": { \"version\": \"3.3.0\" },\n");
     
-    /* storage: hostname and basic files */
+    /* Storage: hostname, timezone, and keyboard */
     fprintf(f, "  \"storage\": {\n");
     fprintf(f, "    \"files\": [\n");
     fprintf(f, "      {\n");
@@ -113,27 +128,67 @@ static bool generate_ignition(const installer_state_t *st)
     fprintf(f, "        \"contents\": { \"source\": \"data:,%s%%0A\" },\n", st->hostname);
     fprintf(f, "        \"mode\": 420\n");
     fprintf(f, "      }\n");
+    fprintf(f, "    ],\n");
+    fprintf(f, "    \"links\": [\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        \"path\": \"/etc/localtime\",\n");
+    fprintf(f, "        \"target\": \"../usr/share/zoneinfo/%s\"\n", st->timezone[0] ? st->timezone : "UTC");
+    fprintf(f, "      }\n");
     fprintf(f, "    ]\n");
     fprintf(f, "  },\n");
 
-    /* passwd: core user with SSH key */
+    /* Passwd: User configuration */
     fprintf(f, "  \"passwd\": {\n");
     fprintf(f, "    \"users\": [\n");
     fprintf(f, "      {\n");
-    fprintf(f, "        \"name\": \"core\",\n");
+    fprintf(f, "        \"name\": \"%s\",\n", st->username[0] ? st->username : "core");
+    if (st->password_hash[0]) {
+        fprintf(f, "        \"passwordHash\": \"%s\",\n", st->password_hash);
+    }
     fprintf(f, "        \"sshAuthorizedKeys\": [ \"%s\" ],\n", st->ssh_key);
     fprintf(f, "        \"groups\": [ \"wheel\", \"sudo\" ]\n");
     fprintf(f, "      }\n");
     fprintf(f, "    ]\n");
     fprintf(f, "  },\n");
 
-    /* systemd units for rpm-ostree and assets */
+    /* Systemd: First-boot setup for RPMs and settings */
     fprintf(f, "  \"systemd\": {\n");
     fprintf(f, "    \"units\": [\n");
     fprintf(f, "      {\n");
-    fprintf(f, "        \"name\": \"install-assets.service\",\n");
+    fprintf(f, "        \"name\": \"barbarous-provisioning.service\",\n");
     fprintf(f, "        \"enabled\": true,\n");
-    fprintf(f, "        \"contents\": \"[Unit]\\nDescription=Install Local Assets\\nAfter=local-fs.target\\n[Service]\\nType=oneshot\\nExecStart=/usr/bin/echo Installing assets...\\n[Install]\\nWantedBy=multi-user.target\"\n");
+    fprintf(f, "        \"contents\": \"[Unit]\\nDescription=Barbarous First Boot Provisioning\\nAfter=network-online.target\\nWants=network-online.target\\nConditionFirstBoot=yes\\n\\n[Service]\\nType=oneshot\\n");
+    
+    /* Keyboard layout command */
+    fprintf(f, "ExecStart=/usr/bin/localectl set-x11-keymap %s\\n", st->keyboard[0] ? st->keyboard : "us");
+
+    /* RPM Installation command */
+    if (st->rpm_count > 0) {
+        fprintf(f, "ExecStart=/usr/bin/rpm-ostree install -y");
+        for (int i = 0; i < st->rpm_count; i++) {
+            char clean[MAX_RPM_LEN];
+            sanitize_pkg_name(clean, st->rpms[i], MAX_RPM_LEN);
+            fprintf(f, " %s", clean);
+        }
+        fprintf(f, "\\n");
+    }
+
+    /* Dotfiles handling (if enabled, could fetch a repo or script) */
+    if (st->install_dotfiles) {
+        fprintf(f, "ExecStart=/usr/bin/echo 'Dotfiles installation enabled'\\n");
+    }
+
+    /* Binary deployment section */
+    if (st->bin_count > 0) {
+        fprintf(f, "ExecStart=/usr/bin/echo 'Deploying selected binaries...'\\n");
+        for (int i = 0; i < st->bin_count; i++) {
+            /* For now, we echo the requirement. 
+               In a real scenario, this would trigger a download script or copy from media. */
+            fprintf(f, "ExecStart=/usr/bin/echo '  Installing binary: %s'\\n", st->bins[i]);
+        }
+    }
+
+    fprintf(f, "ExecStart=/usr/bin/systemctl reboot\\nStandardOutput=journal+console\\nRemainAfterExit=yes\\n\\n[Install]\\nWantedBy=multi-user.target\"\n");
     fprintf(f, "      }\n");
     fprintf(f, "    ]\n");
     fprintf(f, "  }\n");

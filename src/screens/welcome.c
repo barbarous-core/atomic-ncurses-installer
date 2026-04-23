@@ -17,10 +17,12 @@ static const char *LOGO_SM[] = {
 };
 
 static const char *STEPS[] = {
-    " OS Edition Selection (Core, Station, Studio. Edge, Lab, Touch)",
-    " System Configuration (Hostname & SSH)",
-    " Target Disk Selection",
-    " Ignition & System Installation",
+    " Locale, Timezone & User Configuration",
+    " Hostname & SSH Key Setup",
+    " Barbarous OS Edition Selection",
+    " Package & Binary Customization",
+    " Target Disk Selection & Verification",
+    " Final Summary & System Installation",
 };
 #define NSTEPS ((int)(sizeof(STEPS)/sizeof(STEPS[0])))
 
@@ -63,45 +65,31 @@ static void draw_welcome(void)
     /* ── Subtitle ── */
     int row = logo_y + logo_rows + 1;
     ui_center(box, row, "Barbarous OS  ◆  System Installer", CP_DIM, A_BOLD);
-    row++;
 
-    /* ── Divider ── */
-    row++;
-    wattron(box, COLOR_PAIR(CP_BORDER));
-    mvwhline(box, row, 1, ACS_HLINE, boxw - 2);
-    wattroff(box, COLOR_PAIR(CP_BORDER));
-    row++;
-
-    /* ── Step list ── */
+    /* ── Step list at the bottom ── */
+    int start_row = boxh - NSTEPS - 6;
     const char *hdr = "This installer will guide you through:";
     int hdr_x = (boxw - (int)strlen(hdr)) / 2;
     if (hdr_x < 2) hdr_x = 2;
+    
     wattron(box, COLOR_PAIR(CP_NORMAL) | A_BOLD);
-    mvwaddstr(box, row, hdr_x, hdr);
+    mvwaddstr(box, start_row, hdr_x, hdr);
     wattroff(box, COLOR_PAIR(CP_NORMAL) | A_BOLD);
-    row++;
 
     int list_x = (boxw / 2) - 18;
     if (list_x < 3) list_x = 3;
 
     for (int i = 0; i < NSTEPS; i++) {
-        row++;
+        int r = start_row + 2 + i;
         wattron(box, COLOR_PAIR(CP_KEY) | A_BOLD);
-        mvwaddch(box, row, list_x, ACS_DIAMOND);
+        mvwaddch(box, r, list_x, ACS_DIAMOND);
         wattroff(box, COLOR_PAIR(CP_KEY) | A_BOLD);
         wattron(box, COLOR_PAIR(CP_NORMAL));
-        mvwaddstr(box, row, list_x + 2, STEPS[i]);
+        mvwaddstr(box, r, list_x + 2, STEPS[i]);
         wattroff(box, COLOR_PAIR(CP_NORMAL));
     }
 
-    /* ── Press-enter prompt ── */
-    row += 2;
-    wattron(box, COLOR_PAIR(CP_BORDER));
-    mvwhline(box, row, 1, ACS_HLINE, boxw - 2);
-    wattroff(box, COLOR_PAIR(CP_BORDER));
-    row += 2;
-
-    ui_button(box, row, (boxw - 20) / 2, "  ENTER  Begin  ", true);
+    ui_button(box, boxh - 2, (boxw - 20) / 2, "  ENTER  Begin  ", true);
 
     wrefresh(box);
     delwin(box);

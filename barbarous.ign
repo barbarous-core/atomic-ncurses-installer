@@ -7,13 +7,20 @@
         "contents": { "source": "data:,barbarous%0A" },
         "mode": 420
       }
+    ],
+    "links": [
+      {
+        "path": "/etc/localtime",
+        "target": "../usr/share/zoneinfo/UTC"
+      }
     ]
   },
   "passwd": {
     "users": [
       {
         "name": "core",
-        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDR/xQDd2lF8XME8UCucUpcFMZgRlXt/lJGH5X+KYuqK mohamed@fedora" ],
+        "passwordHash": "$6$.59967YBHz8gDKJL$pFABRNICAEbuJWbxw.9l.lRrDzkTWu.JaKZrIoHX9vrO0Ztjva4hmvAKt58qgMJY7czEFoh70c.0iVfrsv5UT0",
+        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILRPdCP+m6yXb/XKWDPiZ7XPDizUPUog/avxO6ixVT3e mohamed@fedora" ],
         "groups": [ "wheel", "sudo" ]
       }
     ]
@@ -21,9 +28,9 @@
   "systemd": {
     "units": [
       {
-        "name": "install-assets.service",
+        "name": "barbarous-provisioning.service",
         "enabled": true,
-        "contents": "[Unit]\nDescription=Install Local Assets\nAfter=local-fs.target\n[Service]\nType=oneshot\nExecStart=/usr/bin/echo Installing assets...\n[Install]\nWantedBy=multi-user.target"
+        "contents": "[Unit]\nDescription=Barbarous First Boot Provisioning\nAfter=network-online.target\nWants=network-online.target\nConditionFirstBoot=yes\n\n[Service]\nType=oneshot\nExecStart=/usr/bin/localectl set-x11-keymap us\nExecStart=/usr/bin/rpm-ostree install -y ncdu p7zip / unzip zstd jq htop powertop pass stow grub-reboot usbutils pciutils pcp smartmontools nvme-cli lm_sensors lsof strace iotop gnupg zsh anaconda anaconda-tui tmux ncurses wavemon firewalld tailscale wireguard-tools nmap mtr netcat / socat tcpdump podman flatpak distrobox gcc / c / c++ make python ruby android-tools ffmpeg-free cockpit docker-buildx docker-compose podman-compose libvirt-client daemon-kvm / libvirtd virt-install zfs Duperemove samba mergerfs nfs-utils rclone snapraid sanoid\nExecStart=/usr/bin/echo 'Dotfiles installation enabled'\nExecStart=/usr/bin/systemctl reboot\nStandardOutput=journal+console\nRemainAfterExit=yes\n\n[Install]\nWantedBy=multi-user.target"
       }
     ]
   }
