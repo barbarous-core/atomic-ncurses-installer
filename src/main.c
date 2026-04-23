@@ -7,10 +7,10 @@
 #include "ui.h"
 #include "screens/welcome.h"
 #include "screens/locale.h"
-#include "screens/env.h"
 #include "screens/edition.h"
 #include "screens/config.h"
 #include "screens/disk.h"
+#include "screens/selection.h"
 #include "screens/generate.h"
 
 int main(void)
@@ -63,7 +63,7 @@ int main(void)
                 nav = screen_edition(&state);
                 break;
             case 4:
-                nav = screen_env(&state);
+                nav = screen_selection(&state);
                 break;
             case 5:
                 nav = screen_disk(&state);
