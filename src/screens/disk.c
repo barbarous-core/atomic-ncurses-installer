@@ -251,7 +251,7 @@ int screen_disk(installer_state_t *st)
                         return NAV_NEXT;
                     }
                     /* Redraw after dialog */
-                    ui_draw_header("Step 4 of 5  —  Select Installation Disk");
+                    ui_draw_header("Step 5 of 6  —  Select Installation Disk");
                     ui_draw_footer(footer, 4);
                 }
                 break;
@@ -268,7 +268,7 @@ int screen_disk(installer_state_t *st)
             case KEY_RESIZE:
                 list_rows = LINES - FOOTER_H - (ui_body_top() + 8);
                 if (list_rows < 1) list_rows = 1;
-                ui_draw_header("Step 4 of 5  —  Select Installation Disk");
+                ui_draw_header("Step 5 of 6  —  Select Installation Disk");
                 ui_draw_footer(footer, 4);
                 break;
 

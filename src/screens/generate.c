@@ -127,7 +127,7 @@ int screen_generate(installer_state_t *st)
     char msg[512] = {0};
     
     while (1) {
-        ui_draw_header("Step 5 of 5  —  Summary & Installation");
+        ui_draw_header("Step 6 of 6  —  Summary & Installation");
         ui_draw_footer(footer, 3);
         draw_summary(st, done, success, msg);
 
