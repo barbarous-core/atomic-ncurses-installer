@@ -54,18 +54,19 @@ The generated Ignition file handles:
 
 ## Requirements
 
-| Dependency | Purpose |
-|-----------|---------|
-| `gcc` ≥ 11 | C11 compiler |
-| `ncurses-devel` | TUI library headers |
-| `pkg-config` | Library flag resolution |
-| `openssl` | SHA-512 password hashing (runtime) |
-| `coreos-installer` | Actual CoreOS installation (runtime, on live ISO) |
+| Dependency | Purpose | Website |
+|-----------|---------|---------|
+| `gcc` ≥ 11 | C11 compiler | [gcc.gnu.org](https://gcc.gnu.org/) |
+| `ncurses-devel` | TUI library headers | [invisible-island.net/ncurses](https://invisible-island.net/ncurses/) |
+| `pkg-config` | Library flag resolution | [freedesktop.org](https://www.freedesktop.org/wiki/Software/pkg-config/) |
+| `openssl` | SHA-512 password hashing (runtime) | [openssl.org](https://www.openssl.org/) |
+| `coreos-installer` | Actual CoreOS installation (runtime, on live ISO) | [github.com/coreos/coreos-installer](https://github.com/coreos/coreos-installer) |
+| `chafa` | Generate ASCII art and animation (runtime) | [github.com/hpjansson/chafa](https://github.com/hpjansson/chafa) |
 
 Install on Fedora:
 
 ```bash
-sudo dnf install gcc ncurses-devel pkg-config openssl
+sudo dnf install gcc ncurses-devel pkg-config openssl chafa
 ```
 
 ---
