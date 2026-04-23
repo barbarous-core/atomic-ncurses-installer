@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "qrcodegen.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -281,5 +282,103 @@ done:
     touchwin(stdscr);
     refresh();
     return choice;
+}
+
+void ui_draw_qr_code(WINDOW *win, int y, int x, const char *text)
+{
+    if (!text || !text[0]) return;
+    uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+    uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+    bool ok = qrcodegen_encodeText(text, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+                                   1, 40, qrcodegen_Mask_AUTO, true);
+    if (!ok) return;
+    int size = qrcodegen_getSize(qrcode);
+    for (int dy = 0; dy < size; dy += 2) {
+        for (int dx = 0; dx < size; dx++) {
+            bool top = qrcodegen_getModule(qrcode, dx, dy);
+            bool bot = (dy + 1 < size) ? qrcodegen_getModule(qrcode, dx, dy + 1) : false;
+            if (top && bot) mvwaddstr(win, y + dy/2, x + dx, "█");
+            else if (top) mvwaddstr(win, y + dy/2, x + dx, "▀");
+            else if (bot) mvwaddstr(win, y + dy/2, x + dx, "▄");
+            else mvwaddstr(win, y + dy/2, x + dx, " ");
+        }
+    }
+}
+
+int ui_menu(const char *title, const char **items, int count, int initial)
+{
+    int mw = 40;
+    for (int i = 0; i < count; i++) {
+        int l = (int)strlen(items[i]);
+        if (l + 6 > mw) mw = l + 6;
+    }
+    if (mw > COLS - 4) mw = COLS - 4;
+
+    int mh = 15;
+    if (count + 6 < mh) mh = count + 6;
+    if (mh > LINES - 4) mh = LINES - 4;
+
+    int wy = (LINES - mh) / 2;
+    int wx = (COLS - mw) / 2;
+
+    WINDOW *pop = newwin(mh, mw, wy, wx);
+    wbkgd(pop, COLOR_PAIR(CP_NORMAL));
+    keypad(pop, TRUE);
+
+    int selected = (initial >= 0 && initial < count) ? initial : 0;
+    int scroll = 0;
+    int visible = mh - 4;
+
+    while (1) {
+        werase(pop);
+        ui_box(pop, CP_ACCENT);
+        ui_center(pop, 1, title, CP_ACCENT, A_BOLD);
+        mvwhline(pop, 2, 1, ACS_HLINE, mw - 2);
+
+        for (int i = 0; i < visible && (i + scroll) < count; i++) {
+            int idx = i + scroll;
+            bool sel = (idx == selected);
+            if (sel) wattron(pop, COLOR_PAIR(CP_SELECTED) | A_BOLD);
+            
+            /* Clear row */
+            mvwhline(pop, 3 + i, 2, ' ', mw - 4);
+            mvwprintw(pop, 3 + i, 4, "%s", items[idx]);
+            
+            if (sel) wattroff(pop, COLOR_PAIR(CP_SELECTED) | A_BOLD);
+        }
+
+        /* Scroll indicators */
+        if (scroll > 0) mvwaddch(pop, 3, mw - 2, ACS_UARROW);
+        if (scroll + visible < count) mvwaddch(pop, mh - 2, mw - 2, ACS_DARROW);
+
+        wrefresh(pop);
+
+        int ch = wgetch(pop);
+        switch (ch) {
+            case KEY_UP: case 'k':
+                if (selected > 0) {
+                    selected--;
+                    if (selected < scroll) scroll = selected;
+                }
+                break;
+            case KEY_DOWN: case 'j':
+                if (selected < count - 1) {
+                    selected++;
+                    if (selected >= scroll + visible) scroll = selected - visible + 1;
+                }
+                break;
+            case '\n': case KEY_ENTER: case ' ':
+                delwin(pop);
+                touchwin(stdscr);
+                refresh();
+                return selected;
+            case 27: case 'q': case 'Q':
+                delwin(pop);
+                touchwin(stdscr);
+                refresh();
+                return -1;
+            default: break;
+        }
+    }
 }
 

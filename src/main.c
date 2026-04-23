@@ -1,10 +1,13 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <locale.h>
 
 #include "installer.h"
 #include "ui.h"
 #include "screens/welcome.h"
+#include "screens/locale.h"
+#include "screens/env.h"
 #include "screens/edition.h"
 #include "screens/config.h"
 #include "screens/disk.h"
@@ -12,6 +15,7 @@
 
 int main(void)
 {
+    setlocale(LC_ALL, "");
     /* ── ncurses init ── */
     initscr();
     cbreak();
@@ -49,20 +53,22 @@ int main(void)
             case 0:
                 nav = screen_welcome(&state);
                 break;
-
             case 1:
+                nav = screen_locale(&state);
+                break;
+            case 2:
+                nav = screen_env(&state);
+                break;
+            case 3:
                 nav = screen_edition(&state);
                 break;
-
-            case 2:
+            case 4:
                 nav = screen_config(&state);
                 break;
-
-            case 3:
+            case 5:
                 nav = screen_disk(&state);
                 break;
-
-            case 4:
+            case 6:
                 nav = screen_generate(&state);
                 break;
 

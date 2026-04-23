@@ -206,7 +206,7 @@ int screen_disk(installer_state_t *st)
         "← Back",
         "Q Quit",
     };
-    ui_draw_header("Step 1 of 6  —  Select Installation Disk");
+    ui_draw_header("Step 5 of 6  —  Select Installation Disk");
     ui_draw_footer(footer, 4);
 
     disk_entry_t disks[MAX_DISKS];

@@ -1,8 +1,8 @@
 CC      := gcc
 CFLAGS  := -Wall -Wextra -std=c11 -g \
             -I src \
-            $(shell pkg-config --cflags ncurses)
-LDFLAGS := $(shell pkg-config --libs ncurses)
+            $(shell pkg-config --cflags ncursesw || pkg-config --cflags ncurses)
+LDFLAGS := $(shell pkg-config --libs ncursesw || pkg-config --libs ncurses)
 
 TARGET  := barbarous-install-tui
 SRCDIR  := src

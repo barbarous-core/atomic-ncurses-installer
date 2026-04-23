@@ -68,4 +68,10 @@ int ui_body_width(void);
 /* First row of the body (after header) */
 int ui_body_top(void);
 
+/* Draw a QR code for the given text in window win at (y,x) */
+void ui_draw_qr_code(WINDOW *win, int y, int x, const char *text);
+
+/* Show a scrollable menu and return the index of the selected item, or -1 if cancelled */
+int ui_menu(const char *title, const char **items, int count, int initial);
+
 #endif /* UI_H */

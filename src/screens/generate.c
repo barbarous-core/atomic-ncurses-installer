@@ -30,6 +30,17 @@ static void draw_summary(const installer_state_t *st, bool done, bool success, c
     mvprintw(row++, col1, "Ignition File:    %s", st->output_path);
     attroff(COLOR_PAIR(CP_NORMAL));
 
+    /* QR Code on the right side of the summary */
+    if (st->ssh_key[0]) {
+        int qr_col = bw / 2 + 5;
+        if (qr_col + 35 < bw) { /* only if it fits */
+            attron(COLOR_PAIR(CP_ACCENT) | A_BOLD);
+            mvaddstr(top + 3, qr_col, "Scan SSH Key:");
+            attroff(COLOR_PAIR(CP_ACCENT) | A_BOLD);
+            ui_draw_qr_code(stdscr, top + 4, qr_col, st->ssh_key);
+        }
+    }
+
     row += 2;
 
     if (done) {
@@ -116,7 +127,7 @@ int screen_generate(installer_state_t *st)
     char msg[512] = {0};
     
     while (1) {
-        ui_draw_header("Step 4 of 4  —  Summary & Installation");
+        ui_draw_header("Step 6 of 6  —  Summary & Installation");
         ui_draw_footer(footer, 3);
         draw_summary(st, done, success, msg);
 
