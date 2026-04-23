@@ -152,7 +152,7 @@ int screen_config(installer_state_t *st)
                     ui_msgbox("Please Wait", "Generating ED25519 keypair...", CP_ACCENT);
                     if (auto_generate_ssh_key(st->ssh_key, MAX_SSH_LEN)) {
                         ui_msgbox("Success", "New key generated. PRIVATE KEY saved to /tmp/barbarous_ssh_*. Copy it before rebooting!", CP_SUCCESS);
-                        focus = FLD_SSH_KEY; /* Jump to the key field to show it */
+                        focus = BTN_NEXT; /* Success -> Go to Next button */
                     } else {
                         ui_msgbox("Error", "Failed to run ssh-keygen.", CP_DANGER);
                     }

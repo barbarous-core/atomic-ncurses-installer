@@ -303,7 +303,21 @@ int screen_selection(installer_state_t *st)
                 if (focus == FOCUS_LIST) {
                     screen_category_detail(cats[selected_cat], all_tools, tool_count);
                 } else if (focus == BTN_BACK) return NAV_PREV;
-                else if (focus == BTN_NEXT) return NAV_NEXT;
+                else if (focus == BTN_NEXT) {
+                    /* Fill the installer state lists */
+                    st->rpm_count = 0;
+                    st->bin_count = 0;
+                    for (int i = 0; i < tool_count; i++) {
+                        if (all_tools[i].selected) {
+                            if (strcmp(all_tools[i].type, "rpm") == 0 && st->rpm_count < MAX_RPMS) {
+                                strncpy(st->rpms[st->rpm_count++], all_tools[i].name, MAX_RPM_LEN - 1);
+                            } else if (strcmp(all_tools[i].type, "bin") == 0 && st->bin_count < MAX_BINS) {
+                                strncpy(st->bins[st->bin_count++], all_tools[i].name, MAX_BIN_LEN - 1);
+                            }
+                        }
+                    }
+                    return NAV_NEXT;
+                }
                 break;
             case KEY_RESIZE: break;
             default: break;

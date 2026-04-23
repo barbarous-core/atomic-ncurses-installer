@@ -16,7 +16,7 @@ void ui_init_colors(void)
     init_pair(CP_NORMAL,     COLOR_WHITE,   -1);
     init_pair(CP_ACCENT,     COLOR_CYAN,    -1);
     init_pair(CP_KEY,        COLOR_YELLOW,  -1);
-    init_pair(CP_SELECTED,   COLOR_BLACK,   COLOR_CYAN);
+    init_pair(CP_SELECTED,   COLOR_BLACK,   COLOR_YELLOW);
     init_pair(CP_DANGER,     COLOR_RED,     -1);
     init_pair(CP_SUCCESS,    COLOR_GREEN,   -1);
     init_pair(CP_DIM,        COLOR_BLACK,   -1);   /* will be bold-black */

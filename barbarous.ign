@@ -1,26 +1,20 @@
 {
   "ignition": { "version": "3.3.0" },
+  "storage": {
+    "files": [
+      {
+        "path": "/etc/hostname",
+        "contents": { "source": "data:,barbarous%0A" },
+        "mode": 420
+      }
+    ]
+  },
   "passwd": {
     "users": [
       {
         "name": "core",
-        "passwordHash": "$6$zThW.YwkA8P4Cf8D$Knh9j54HYO5a2Exk.2yUnbWPHUNNcAbNsNRJ/Cb0l7KlmdkpRxzB8jpy0NGEz7ZDnkt1BS5WzLMnZtODVyJFP/",
-        "groups": [ "wheel" ]
-      }
-    ]
-  },
-  "storage": {
-    "files": [
-      {
-        "path": "/etc/vconsole.conf",
-        "contents": { "source": "data:,KEYMAP%3Dus%0A" },
-        "mode": 420
-      }
-    ],
-    "links": [
-      {
-        "path": "/etc/localtime",
-        "target": "../usr/share/zoneinfo/UTC"
+        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDR/xQDd2lF8XME8UCucUpcFMZgRlXt/lJGH5X+KYuqK mohamed@fedora" ],
+        "groups": [ "wheel", "sudo" ]
       }
     ]
   },

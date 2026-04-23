@@ -7,7 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void draw_summary(const installer_state_t *st, bool done, bool success, const char *msg)
+#define FOCUS_DOTFILES 0
+#define FOCUS_INSTALL  1
+#define FOCUS_BACK     2
+
+static void draw_summary(installer_state_t *st, bool done, bool success, const char *msg, int focus)
 {
     ui_clear_body();
     
@@ -15,54 +19,79 @@ static void draw_summary(const installer_state_t *st, bool done, bool success, c
     int top = ui_body_top();
     int row = top + 1;
     
-    ui_center(stdscr, row, "Installation Summary", CP_ACCENT, A_BOLD);
+    ui_center(stdscr, row, "Installation Summary & Confirmation", CP_ACCENT, A_BOLD);
     row += 2;
     
-    int col1 = (bw / 2) - 25;
-    if (col1 < 2) col1 = 2;
+    int col1_x = 4;
+    int col2_x = bw / 2 + 2;
 
-    attron(COLOR_PAIR(CP_NORMAL));
-    mvprintw(row++, col1, "Target Edition:   %s", st->edition);
-    mvprintw(row++, col1, "System Hostname:  %s", st->hostname);
-    mvprintw(row++, col1, "SSH Public Key:   %s", st->ssh_key[0] ? "[Provided]" : "[None]");
-    mvprintw(row++, col1, "Target Disk:      %s", st->disk[0] ? st->disk : "None");
-    row++;
-    mvprintw(row++, col1, "Ignition File:    %s", st->output_path);
-    attroff(COLOR_PAIR(CP_NORMAL));
+    /* ─── Column 1: Configuration in Green Box ─── */
+    int box_w = bw / 2 - 4;
+    int box_h = 10;
+    WINDOW *sum_box = newwin(box_h, box_w, row, col1_x - 1);
+    wbkgd(sum_box, COLOR_PAIR(CP_NORMAL));
+    ui_box(sum_box, CP_ACCENT);
+    
+    int r1 = 2;
+    int lx = 3;
+    mvwprintw(sum_box, r1++, lx, "%-22s: %s", "Target Edition", st->edition);
+    mvwprintw(sum_box, r1++, lx, "%-22s: %s", "System Hostname", st->hostname);
+    mvwprintw(sum_box, r1++, lx, "%-22s: %s / %s", "Keyboard / Time Zone", st->keyboard, st->timezone);
+    mvwprintw(sum_box, r1++, lx, "%-22s: %s", "Username", st->username);
+    mvwprintw(sum_box, r1++, lx, "%-22s: %d RPMs, %d Bins", "Applications", st->rpm_count, st->bin_count);
+    
+    mvwprintw(sum_box, r1++, lx, "%-22s: ", "Target Disk");
+    wattron(sum_box, COLOR_PAIR(CP_DANGER) | A_BOLD);
+    wprintw(sum_box, "%s", st->disk[0] ? st->disk : "NOT SELECTED");
+    wattroff(sum_box, COLOR_PAIR(CP_DANGER) | A_BOLD);
 
-    /* QR Code on the right side of the summary */
+    mvwprintw(sum_box, r1++, lx, "%-22s: %s", "Ignition File", st->output_path);
+    wrefresh(sum_box);
+    delwin(sum_box);
+
+    /* ─── Column 2: SSH & Security ─── */
+    int r2 = row;
+    attron(COLOR_PAIR(CP_ACCENT) | A_BOLD);
+    mvaddstr(r2++, col2_x, "SSH Public Key:");
+    attroff(COLOR_PAIR(CP_ACCENT) | A_BOLD);
+    
     if (st->ssh_key[0]) {
-        int qr_col = bw / 2 + 5;
-        if (qr_col + 35 < bw) { /* only if it fits */
-            attron(COLOR_PAIR(CP_ACCENT) | A_BOLD);
-            mvaddstr(top + 3, qr_col, "Scan SSH Key:");
-            attroff(COLOR_PAIR(CP_ACCENT) | A_BOLD);
-            ui_draw_qr_code(stdscr, top + 4, qr_col, st->ssh_key);
-        }
+        char clip[64];
+        strncpy(clip, st->ssh_key, 60);
+        clip[60] = '\0';
+        mvprintw(r2++, col2_x, "%.60s...", clip);
+        r2++;
+        ui_draw_qr_code(stdscr, r2, col2_x, st->ssh_key);
+    } else {
+        mvprintw(r2++, col2_x, "[ No SSH Key Provided ]");
     }
 
-    row += 2;
+    /* ─── Bottom Actions ─── */
+    int action_row = LINES - FOOTER_H - 4;
+    
+    /* Dotfiles Checkbox above Install button */
+    bool df_focus = (focus == FOCUS_DOTFILES);
+    if (df_focus) attron(COLOR_PAIR(CP_SELECTED) | A_BOLD);
+    mvprintw(action_row, bw - 38, "[%s]  Include default dotfiles?", st->install_dotfiles ? "X" : " ");
+    if (df_focus) attroff(COLOR_PAIR(CP_SELECTED) | A_BOLD);
 
     if (done) {
+        int final_row = action_row - 2;
         if (success) {
-            ui_center(stdscr, row, "✅ Installation starting / Ignition written!", CP_SUCCESS, A_BOLD);
-            row++;
-            ui_center(stdscr, row, msg, CP_NORMAL, 0);
+            ui_center(stdscr, final_row, "✅ Installation starting / Ignition written!", CP_SUCCESS, A_BOLD);
+            ui_center(stdscr, final_row + 1, msg, CP_NORMAL, 0);
         } else {
-            ui_center(stdscr, row, "❌ Error during installation/generation!", CP_DANGER, A_BOLD);
-            row++;
-            ui_center(stdscr, row, msg, CP_DANGER, 0);
+            ui_center(stdscr, final_row, "❌ Error during installation/generation!", CP_DANGER, A_BOLD);
+            ui_center(stdscr, final_row + 1, msg, CP_DANGER, 0);
         }
-    } else {
-        ui_center(stdscr, row, "Press ENTER to generate Ignition and start installation.", CP_KEY, A_BOLD);
     }
 
     int btn_row = LINES - FOOTER_H - 2;
     if (done) {
         ui_button(stdscr, btn_row, (bw - 12)/2, "  Quit  ", true);
     } else {
-        ui_button(stdscr, btn_row, 3,       "  ← Back  ", false);
-        ui_button(stdscr, btn_row, bw - 18, "  Install  ", true);
+        ui_button(stdscr, btn_row, 3,       "  ← Back  ", focus == FOCUS_BACK);
+        ui_button(stdscr, btn_row, bw - 18, "  Install  ", focus == FOCUS_INSTALL);
     }
 
     refresh();
@@ -117,6 +146,8 @@ static bool generate_ignition(const installer_state_t *st)
 int screen_generate(installer_state_t *st)
 {
     const char *footer[] = {
+        "↑↓ Navigate",
+        "SPACE Toggle",
         "ENTER Confirm",
         "← Back",
         "Q Quit",
@@ -125,35 +156,64 @@ int screen_generate(installer_state_t *st)
     bool done = false;
     bool success = false;
     char msg[512] = {0};
+    int focus = FOCUS_DOTFILES;
     
     while (1) {
         ui_draw_header("Step 6 of 6  —  Summary & Installation");
-        ui_draw_footer(footer, 3);
-        draw_summary(st, done, success, msg);
+        ui_draw_footer(footer, 5);
+        draw_summary(st, done, success, msg, focus);
 
         int ch = getch();
 
         switch (ch) {
-            case KEY_LEFT: case 'h':
-                if (!done) return NAV_PREV;
+            case KEY_UP: case 'k':
+                if (!done) {
+                    if (focus == FOCUS_INSTALL || focus == FOCUS_BACK) focus = FOCUS_DOTFILES;
+                    else focus = FOCUS_INSTALL;
+                }
                 break;
-            case '\n': case KEY_ENTER: case ' ':
+            case KEY_DOWN: case 'j':
+                if (!done) {
+                    if (focus == FOCUS_DOTFILES) focus = FOCUS_INSTALL;
+                }
+                break;
+            case '\t':
+                if (!done) focus = (focus + 1) % 3;
+                break;
+            case ' ':
+                if (!done && focus == FOCUS_DOTFILES) {
+                    st->install_dotfiles = !st->install_dotfiles;
+                }
+                break;
+            case KEY_LEFT: case 'h':
+                if (!done) {
+                    if (focus == FOCUS_INSTALL) focus = FOCUS_BACK;
+                    else return NAV_PREV;
+                }
+                break;
+            case KEY_RIGHT: case 'l':
+                if (!done && focus == FOCUS_BACK) focus = FOCUS_INSTALL;
+                break;
+            case '\n': case KEY_ENTER:
                 if (done) {
                     return NAV_QUIT;
                 } else {
-                    success = generate_ignition(st);
-                    if (success) {
-                        snprintf(msg, sizeof(msg), "Saved to %s", st->output_path);
+                    if (focus == FOCUS_BACK) return NAV_PREV;
+                    if (focus == FOCUS_DOTFILES) {
+                        st->install_dotfiles = !st->install_dotfiles;
                     } else {
-                        snprintf(msg, sizeof(msg), "Failed to open output path %s for writing.", st->output_path);
+                        success = generate_ignition(st);
+                        if (success) {
+                            snprintf(msg, sizeof(msg), "Saved to %s", st->output_path);
+                        } else {
+                            snprintf(msg, sizeof(msg), "Failed to open output path %s for writing.", st->output_path);
+                        }
+                        done = true;
                     }
-                    done = true;
                 }
                 break;
             case 'q': case 'Q':
                 return NAV_QUIT;
-            case KEY_RESIZE:
-                break;
             default:
                 break;
         }

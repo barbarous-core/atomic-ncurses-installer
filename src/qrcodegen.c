@@ -427,8 +427,15 @@ testable int calcSegmentBitLength(enum qrcodegen_Mode mode, size_t numChars) {
 }
 
 struct qrcodegen_Segment qrcodegen_makeBytes(const uint8_t data[], size_t len, uint8_t buf[]) {
-	struct qrcodegen_Segment result; result.mode = qrcodegen_Mode_BYTE; result.numChars = (int)len; result.bitLength = calcSegmentBitLength(result.mode, len);
-	if (len > 0) memcpy(buf, data, len * sizeof(buf[0])); result.data = buf; return result;
+	struct qrcodegen_Segment result;
+	result.mode = qrcodegen_Mode_BYTE;
+	result.numChars = (int)len;
+	result.bitLength = calcSegmentBitLength(result.mode, len);
+	if (len > 0) {
+		memcpy(buf, data, len * sizeof(buf[0]));
+	}
+	result.data = buf;
+	return result;
 }
 
 struct qrcodegen_Segment qrcodegen_makeNumeric(const char *digits, uint8_t buf[]) {

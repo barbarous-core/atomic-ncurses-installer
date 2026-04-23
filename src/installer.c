@@ -1,5 +1,6 @@
 #include "installer.h"
 #include <string.h>
+#include <stdio.h>
 
 void installer_init(installer_state_t *st)
 {
@@ -11,5 +12,6 @@ void installer_init(installer_state_t *st)
     strncpy(st->username,    "core",              MAX_USER_LEN - 1);
     strncpy(st->keyboard,    "us",                MAX_KB_LEN   - 1);
     strncpy(st->timezone,    "UTC",               MAX_TZ_LEN   - 1);
-    strncpy(st->output_path, "/tmp/config.ign",   MAX_PATH_LEN - 1);
+    st->install_dotfiles = true;
+    snprintf(st->output_path, MAX_PATH_LEN, "barbarous.ign");
 }

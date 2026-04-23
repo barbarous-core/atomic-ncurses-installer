@@ -53,6 +53,8 @@ typedef struct {
     char dotfiles[MAX_DOTFILES][MAX_DOTFILE_LEN];
     int  dotfile_count;
 
+    bool install_dotfiles;
+
     /* Output */
     char output_path[MAX_PATH_LEN];   /* where .ign is written    */
 } installer_state_t;

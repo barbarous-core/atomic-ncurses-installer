@@ -211,9 +211,11 @@ int screen_locale(installer_state_t *st)
                     
                     if (strlen(pass1) < 4) {
                         snprintf(err_msg, sizeof(err_msg), "Password too short (min 4 chars).");
+                        focus = FLD_PASS;
                     } else if (strcmp(pass1, pass2) != 0) {
                         snprintf(err_msg, sizeof(err_msg), "Passwords do not match!");
                         st->password_hash[0] = '\0';
+                        focus = FLD_PASS;
                     } else {
                         /* Hash the password using openssl */
                         char cmd[512];
@@ -225,6 +227,9 @@ int screen_locale(installer_state_t *st)
                             }
                             pclose(fp);
                         }
+                        /* If correct, move to Next button */
+                        if (st->password_hash[0]) focus = BTN_NEXT;
+                        else focus = FLD_PASS;
                     }
                     delwin(pbox);
                 } else if (focus == BTN_BACK) {
