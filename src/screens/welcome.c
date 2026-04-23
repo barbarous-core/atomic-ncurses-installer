@@ -4,18 +4,6 @@
 #include <ncurses.h>
 #include <string.h>
 
-/* ─── ASCII banner (7-row, fits in 70 cols) ──────────────────────────────── */
-static const char *LOGO[] = {
-    "Animation or ascii arts goes here BIG",
-      "",    "",    "",    "",    "",    "",  NULL
-};
-
-/* Smaller banner for narrow terminals (< 82 cols) */
-static const char *LOGO_SM[] = {
-    "Animation or ascii arts goes here SMALL",    "",    "",    "",    "",   
-    NULL
-};
-
 static const char *STEPS[] = {
     " Locale, Timezone & User Configuration",
     " Hostname & SSH Key Setup",
@@ -26,7 +14,6 @@ static const char *STEPS[] = {
 };
 #define NSTEPS ((int)(sizeof(STEPS)/sizeof(STEPS[0])))
 
-/* ─── Draw ───────────────────────────────────────────────────────────────── */
 
 static void draw_welcome(void)
 {
@@ -46,25 +33,6 @@ static void draw_welcome(void)
     WINDOW *box = newwin(boxh, boxw, boxy, boxx);
     wbkgd(box, COLOR_PAIR(CP_NORMAL));
     ui_box(box, CP_BORDER);
-
-    /* ── Logo ── */
-    const char **logo = (boxw >= 80) ? LOGO : LOGO_SM;
-    int logo_rows = 0;
-    while (logo[logo_rows]) logo_rows++;
-    int logo_w = (int)strlen(logo[0]);
-    int logo_x = (boxw - logo_w) / 2;
-    if (logo_x < 1) logo_x = 1;
-    int logo_y = 2;
-
-    for (int i = 0; i < logo_rows; i++) {
-        wattron(box, COLOR_PAIR(CP_ACCENT) | A_BOLD);
-        mvwaddstr(box, logo_y + i, logo_x, logo[i]);
-        wattroff(box, COLOR_PAIR(CP_ACCENT) | A_BOLD);
-    }
-
-    /* ── Subtitle ── */
-    int row = logo_y + logo_rows + 1;
-    ui_center(box, row, "Barbarous OS  ◆  System Installer", CP_DIM, A_BOLD);
 
     /* ── Step list at the bottom ── */
     int start_row = boxh - NSTEPS - 6;
@@ -88,6 +56,7 @@ static void draw_welcome(void)
         mvwaddstr(box, r, list_x + 2, STEPS[i]);
         wattroff(box, COLOR_PAIR(CP_NORMAL));
     }
+
 
     ui_button(box, boxh - 2, (boxw - 20) / 2, "  ENTER  Begin  ", true);
 
