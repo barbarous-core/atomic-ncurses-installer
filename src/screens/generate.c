@@ -334,18 +334,48 @@ static void run_real_install(installer_state_t *st)
     if (status == 0) {
         ui_msgbox("Success", "Base system installed. Copying selected assets...", CP_SUCCESS);
         
-        /* 1. Mount the target 'root' partition by label */
-        system("mkdir -p /mnt/target_root");
-        system("mount -L root /mnt/target_root 2>/dev/null || mount /dev/disk/by-label/root /mnt/target_root");
+        /* 1. Check if the disk is already manually mounted */
+        bool already_mounted = (access("/mnt/target_root/ostree", F_OK) == 0);
+
+        if (!already_mounted) {
+            /* Force udev to settle and refresh partition table */
+            system("sudo udevadm settle");
+            char probe_cmd[256];
+            snprintf(probe_cmd, sizeof(probe_cmd), "sudo partprobe %s 2>/dev/null", st->disk);
+            system(probe_cmd);
+            system("sudo udevadm settle");
+            sleep(2);
+
+            /* 2. Enhanced Mount Strategy */
+            system("sudo mkdir -p /mnt/target_root");
+            char mount_cmd[2048];
+            snprintf(mount_cmd, sizeof(mount_cmd), 
+                     "sudo mount $(sudo blkid -L root) /mnt/target_root 2>/dev/null || "
+                     "sudo mount $(sudo findfs LABEL=root 2>/dev/null) /mnt/target_root 2>/dev/null || "
+                     "sudo mount %s4 /mnt/target_root 2>/dev/null || "
+                     "sudo mount %sp4 /mnt/target_root 2>/dev/null || "
+                     "sudo mount %s3 /mnt/target_root 2>/dev/null || "
+                     "sudo mount -L root /mnt/target_root 2>/dev/null", 
+                     st->disk, st->disk, st->disk);
+            system(mount_cmd);
+        }
+
+        /* Verify mount success (check for ostree or usr) */
+        if (access("/mnt/target_root/ostree", F_OK) != 0 && access("/mnt/target_root/usr", F_OK) != 0) {
+            ui_msgbox("Warning", "Target partition not mounted. Assets may be missing after reboot.", CP_DANGER);
+            if (!already_mounted) system("sudo umount /mnt/target_root 2>/dev/null");
+            goto install_finish;
+        }
 
         /* 2. Create staging area in /var (relative to the mounted root) */
-        system("mkdir -p /mnt/target_root/var/lib/barbarous/rpms");
-        system("mkdir -p /mnt/target_root/var/lib/barbarous/bins");
+        system("sudo mkdir -p /mnt/target_root/var/lib/barbarous/rpms");
+        system("sudo mkdir -p /mnt/target_root/var/lib/barbarous/bins");
 
         /* 3. Dynamic ISO asset search */
         const char *iso_search[] = {
             "/run/media/iso/barbarous-assets",
             "/run/media/liveuser/fedora-coreos/barbarous-assets",
+            "/run/media/liveuser/Fedora-CoreOS-43/barbarous-assets",
             "/mnt/barbarous-assets",
             "/assets",
             NULL
@@ -360,23 +390,56 @@ static void run_real_install(installer_state_t *st)
         }
 
         if (iso_base) {
+            int total = st->rpm_count + st->bin_count;
+            int current = 0;
+            if (total == 0) total = 1; // Prevent div by zero
+
+            ui_clear_body();
+            int p_w = 64, p_h = 8;
+            WINDOW *prog_win = newwin(p_h, p_w, (LINES - p_h) / 2, (ui_body_width() - p_w) / 2);
+            wbkgd(prog_win, COLOR_PAIR(CP_NORMAL));
+            ui_box(prog_win, CP_ACCENT);
+            ui_center(prog_win, 1, "Deploying Assets to Target Disk", CP_ACCENT, A_BOLD);
+
             char cp_cmd[512];
             /* Copy selected RPMs */
             for (int i = 0; i < st->rpm_count; i++) {
-                snprintf(cp_cmd, sizeof(cp_cmd), "cp %s/rpms/%s*.rpm /mnt/target_root/var/lib/barbarous/rpms/ 2>/dev/null", 
+                mvwprintw(prog_win, 3, 4, "Copying RPM: %-40.40s", st->rpms[i]);
+                ui_progress_bar(prog_win, 5, 4, p_w - 8, (current * 100) / total, CP_SUCCESS);
+                wrefresh(prog_win);
+
+                snprintf(cp_cmd, sizeof(cp_cmd), "sudo cp '%s/rpms/%s'*.rpm '/mnt/target_root/var/lib/barbarous/rpms/' 2>/dev/null", 
                          iso_base, st->rpms[i]);
                 system(cp_cmd);
+                current++;
             }
             /* Copy selected Binaries */
             for (int i = 0; i < st->bin_count; i++) {
-                snprintf(cp_cmd, sizeof(cp_cmd), "cp %s/bins/%s /mnt/target_root/var/lib/barbarous/bins/ 2>/dev/null", 
+                mvwprintw(prog_win, 3, 4, "Copying BIN: %-40.40s", st->bins[i]);
+                ui_progress_bar(prog_win, 5, 4, p_w - 8, (current * 100) / total, CP_SUCCESS);
+                wrefresh(prog_win);
+
+                snprintf(cp_cmd, sizeof(cp_cmd), "sudo cp '%s/bins/%s' '/mnt/target_root/var/lib/barbarous/bins/' 2>/dev/null", 
                          iso_base, st->bins[i]);
                 system(cp_cmd);
+                current++;
             }
+            delwin(prog_win);
+
+            char summary[512];
+            snprintf(summary, sizeof(summary), 
+                     "Successfully staged %d RPMs and %d Binaries.\n\n"
+                     "Staging Path: /var/lib/barbarous/\n"
+                     "Deployment Path: /usr/local/bin/", 
+                     st->rpm_count, st->bin_count);
+            ui_alert("Assets Staged", summary, CP_SUCCESS);
+        } else {
+            ui_msgbox("Notice", "No barbarous-assets folder found on ISO. Binaries/RPMs skipped.", CP_DIM);
         }
 
-        system("umount /mnt/target_root");
+        system("sudo umount /mnt/target_root 2>/dev/null");
         
+install_finish:
         wattron(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
         ui_center(win, 10, "★ INSTALLATION COMPLETE ★", CP_SUCCESS, A_BOLD);
         wattroff(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
