@@ -19,8 +19,8 @@
     "users": [
       {
         "name": "core",
-        "passwordHash": "$6$kfIO07HV0XTpiiX5$vlNXSIhTiEb0HCa/lt3KuYjhf01oyLrie8eBBIgxdQEM1a5DgfMX3Nr/MXGEHNRLMczf.SMxQxhYN225dq4Fo/",
-        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII9VighFWTR7abL2duan5B+d7ewvhVf1zeLXNShGs7fX mohamed@fedora" ],
+        "passwordHash": "$6$uhR73Kb4NDPfZ08l$ZbwFKLbUnhdk4BMWbD1XrUDLCZZghsIFB/Y8MOce84/Lvg/5/n4i1Y9eB/5a/6asY8x35VI0bYfgFUhuuRtdc/",
+        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIATwmMVz26ps1J2gjZQ/V/mW0/ePYrctdCIl/MD1ZEkd mohamed@fedora" ],
         "groups": [ "wheel", "sudo" ]
       }
     ]

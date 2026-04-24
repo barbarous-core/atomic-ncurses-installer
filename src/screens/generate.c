@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #define FOCUS_DOTFILES 0
 #define FOCUS_INSTALL  1
@@ -199,7 +200,7 @@ static bool generate_ignition(const installer_state_t *st)
     return true;
 }
 
-static void simulate_install(installer_state_t *st)
+static void run_real_install(installer_state_t *st)
 {
     ui_clear_body();
     int bw = ui_body_width();
@@ -216,53 +217,69 @@ static void simulate_install(installer_state_t *st)
     wbkgd(win, COLOR_PAIR(CP_NORMAL));
     ui_box(win, CP_ACCENT);
     
-    const char *cmds[] = {
-        "coreos-installer install %s --ignition-file %s",
-        "Writing image to target disk...",
-        "Configuring GPT and partitions...",
-        "Extracting ostree commit...",
-        "Writing Ignition configuration...",
-        "Verifying checksums...",
-    };
-    
-    char cmd_buf[256];
-    snprintf(cmd_buf, sizeof(cmd_buf), cmds[0], st->disk[0] ? st->disk : "/dev/sda", st->output_path);
+    char cmd[512];
+    /* Note: coreos-installer usually needs root. 
+       We assume the TUI is run with necessary privileges. */
+    snprintf(cmd, sizeof(cmd), "coreos-installer install %s --ignition-file %s 2>&1", 
+             st->disk[0] ? st->disk : "/dev/sda", st->output_path);
     
     wattron(win, COLOR_PAIR(CP_DIM));
-    mvwprintw(win, 2, 4, "# %s", cmd_buf);
+    mvwprintw(win, 2, 4, "# %s", cmd);
     wattroff(win, COLOR_PAIR(CP_DIM));
     
-    for (int i = 1; i < 6; i++) {
-        /* Clear previous step line */
-        mvwprintw(win, 4, 4, "                                                            ");
-        wattron(win, COLOR_PAIR(CP_ACCENT) | A_BOLD);
-        mvwprintw(win, 4, 4, "Step %d/5: %s", i, cmds[i]);
-        wattroff(win, COLOR_PAIR(CP_ACCENT) | A_BOLD);
-        
-        for (int p = 0; p <= 100; p += (1 + rand() % 5)) {
-            if (p > 100) p = 100;
-            ui_progress_bar(win, 6, 4, box_w - 15, p, CP_SUCCESS);
-            
-            /* Random log messages */
-            if (p % 20 == 0) {
-                wattron(win, COLOR_PAIR(CP_DIM));
-                mvwprintw(win, 8, 4, "log: processed %d%% of block data...      ", p);
-                wattroff(win, COLOR_PAIR(CP_DIM));
-            }
-            
-            wrefresh(win);
-            usleep(20000 + (rand() % 50000));
-            if (p == 100) break;
+    FILE *fp = popen(cmd, "r");
+    if (!fp) {
+        ui_center(win, 6, "Error: Could not execute coreos-installer", CP_DANGER, A_BOLD);
+        wrefresh(win);
+        sleep(2);
+        delwin(win);
+        return;
+    }
+
+    char line[512];
+    int p = 0;
+    
+    while (fgets(line, sizeof(line), fp)) {
+        /* Clean the line of trailing whitespace/newlines */
+        size_t len = strlen(line);
+        while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) {
+            line[--len] = '\0';
         }
-        usleep(300000);
+        
+        /* Parse percentage if present (e.g. "... 45% ...") */
+        char *pct_ptr = strchr(line, '%');
+        if (pct_ptr && pct_ptr > line) {
+            char *start = pct_ptr - 1;
+            while (start > line && isdigit((unsigned char)line[(start - line) - 1])) start--;
+            int val = atoi(start);
+            if (val >= 0 && val <= 100) p = val;
+        }
+        
+        /* Display current status line */
+        mvwprintw(win, 4, 4, "                                                                ");
+        if (strlen(line) > (size_t)box_w - 10) line[box_w - 10] = '\0';
+        mvwprintw(win, 4, 4, "Status: %s", line);
+        
+        /* Update progress bar */
+        ui_progress_bar(win, 6, 4, box_w - 15, p, CP_SUCCESS);
+        
+        wrefresh(win);
     }
     
-    wattron(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
-    ui_center(win, 10, "★ INSTALLATION COMPLETE ★", CP_SUCCESS, A_BOLD);
-    wattroff(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
-    wrefresh(win);
+    int status = pclose(fp);
     
-    sleep(2);
+    if (status == 0) {
+        wattron(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
+        ui_center(win, 10, "★ INSTALLATION COMPLETE ★", CP_SUCCESS, A_BOLD);
+        wattroff(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
+    } else {
+        wattron(win, COLOR_PAIR(CP_DANGER) | A_BOLD);
+        ui_center(win, 10, "✖ INSTALLATION FAILED ✖", CP_DANGER, A_BOLD);
+        wattroff(win, COLOR_PAIR(CP_DANGER) | A_BOLD);
+    }
+    
+    wrefresh(win);
+    sleep(3);
     delwin(win);
     touchwin(stdscr);
     refresh();
@@ -334,9 +351,18 @@ int screen_generate(installer_state_t *st)
                     if (focus == FOCUS_DOTFILES) {
                         st->install_dotfiles = !st->install_dotfiles;
                     } else {
+                        char confirm_msg[256];
+                        snprintf(confirm_msg, sizeof(confirm_msg), 
+                                 "Are you sure? This will PERMANENTLY WIPE %s.", 
+                                 st->disk[0] ? st->disk : "/dev/sda");
+                        
+                        if (!ui_confirm("⚠️  DESTRUCTIVE ACTION ⚠️", confirm_msg)) {
+                            break;
+                        }
+
                         success = generate_ignition(st);
                         if (success) {
-                            simulate_install(st);
+                            run_real_install(st);
                             snprintf(msg, sizeof(msg), "System successfully provisioned to %s", st->disk);
                         } else {
                             snprintf(msg, sizeof(msg), "Failed to generate ignition file.");
