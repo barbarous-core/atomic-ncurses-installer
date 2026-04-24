@@ -44,6 +44,7 @@ typedef struct {
     char timezone[MAX_TZ_LEN];        /* e.g. America/New_York    */
 
     /* Data from matrix.csv */
+    char matrix_path[MAX_PATH_LEN];
     char rpms[MAX_RPMS][MAX_RPM_LEN];
     int  rpm_count;
 

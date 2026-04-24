@@ -12,6 +12,7 @@ void installer_init(installer_state_t *st)
     strncpy(st->username,    "core",              MAX_USER_LEN - 1);
     strncpy(st->keyboard,    "us",                MAX_KB_LEN   - 1);
     strncpy(st->timezone,    "UTC",               MAX_TZ_LEN   - 1);
+    strncpy(st->matrix_path, "/run/media/iso/barbarous-assets/assets/matrix.csv", MAX_PATH_LEN - 1);
     st->install_dotfiles = true;
     snprintf(st->output_path, MAX_PATH_LEN, "barbarous.ign");
 }

@@ -18,9 +18,9 @@
   "passwd": {
     "users": [
       {
-        "name": "core",
-        "passwordHash": "$6$uhR73Kb4NDPfZ08l$ZbwFKLbUnhdk4BMWbD1XrUDLCZZghsIFB/Y8MOce84/Lvg/5/n4i1Y9eB/5a/6asY8x35VI0bYfgFUhuuRtdc/",
-        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIATwmMVz26ps1J2gjZQ/V/mW0/ePYrctdCIl/MD1ZEkd mohamed@fedora" ],
+        "name": "mohamed",
+        "passwordHash": "$6$9Ob8lQBzOcLDdmAt$PPnatRu1RelUm8wASqf9LvJPT08be34HdeZSOzjcNCIaxlOD97mGlpEUTtZSYgftaEdcfZvUweFgZE2edg1ge.",
+        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILfRQc22byuiQy4G2FvokvzB4tSvRcEolwD61Pyq05QW root@fedora" ],
         "groups": [ "wheel", "sudo" ]
       }
     ]

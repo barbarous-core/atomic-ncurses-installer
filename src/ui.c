@@ -160,8 +160,11 @@ int ui_readline(WINDOW *win, int y, int x, int w,
                 char *buf, int bufsz, bool secret)
 {
     int len = (int)strnlen(buf, bufsz - 1);
+    int pos = 0;
+    
+    keypad(win, TRUE);
     curs_set(1);
-    echo();
+    noecho();
 
     while (1) {
         /* Redraw field */
@@ -175,20 +178,40 @@ int ui_readline(WINDOW *win, int y, int x, int w,
             waddnstr(win, buf, len);
         }
         wattroff(win, COLOR_PAIR(CP_SELECTED));
-        wmove(win, y, x + len);
+        wmove(win, y, x + pos);
         wrefresh(win);
 
         int ch = wgetch(win);
         if (ch == '\n' || ch == KEY_ENTER) break;
-        if ((ch == KEY_BACKSPACE || ch == 127 || ch == '\b') && len > 0) {
-            buf[--len] = '\0';
+        
+        if (ch == KEY_LEFT) {
+            if (pos > 0) pos--;
+        } else if (ch == KEY_RIGHT) {
+            if (pos < len) pos++;
+        } else if (ch == KEY_HOME) {
+            pos = 0;
+        } else if (ch == KEY_END) {
+            pos = len;
+        } else if (ch == KEY_DC) { /* Delete key */
+            if (pos < len) {
+                memmove(&buf[pos], &buf[pos + 1], len - pos);
+                len--;
+            }
+        } else if ((ch == KEY_BACKSPACE || ch == 127 || ch == '\b')) {
+            if (pos > 0) {
+                memmove(&buf[pos - 1], &buf[pos], len - pos + 1);
+                pos--;
+                len--;
+            }
         } else if (ch >= 32 && ch < 127 && len < bufsz - 1 && len < w - 1) {
-            buf[len++] = (char)ch;
-            buf[len]   = '\0';
+            /* Insert character */
+            memmove(&buf[pos + 1], &buf[pos], len - pos + 1);
+            buf[pos] = (char)ch;
+            pos++;
+            len++;
         }
     }
 
-    noecho();
     curs_set(0);
     return len;
 }

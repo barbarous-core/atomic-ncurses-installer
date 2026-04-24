@@ -6,8 +6,8 @@
 
 #define MAX_CATS 20
 
-static int get_categories(char cats[MAX_CATS][64]) {
-    FILE *f = fopen("assets/matrix.csv", "r");
+static int get_categories(const char *path, char cats[MAX_CATS][64]) {
+    FILE *f = fopen(path, "r");
     if (!f) return 0;
 
     char line[1024];
@@ -55,10 +55,11 @@ static int get_categories(char cats[MAX_CATS][64]) {
     return count;
 }
 
-#define FOCUS_LIST 0
-#define BTN_BACK   1
-#define BTN_NEXT   2
-#define NFOCUS     3
+#define FOCUS_PATH   0
+#define FOCUS_LIST   1
+#define BTN_BACK     2
+#define BTN_NEXT     3
+#define NFOCUS       4
 
 typedef struct {
     char name[64];
@@ -67,9 +68,9 @@ typedef struct {
     bool selected;
 } tool_db_entry_t;
 
-static int load_all_tools(tool_db_entry_t *tools, int max)
+static int load_all_tools(const char *path, tool_db_entry_t *tools, int max)
 {
-    FILE *f = fopen("assets/matrix.csv", "r");
+    FILE *f = fopen(path, "r");
     if (!f) return 0;
 
     char line[1024];
@@ -127,7 +128,7 @@ static int load_all_tools(tool_db_entry_t *tools, int max)
     return count;
 }
 
-static void draw_selection_screen(char cats[MAX_CATS][64], int cat_count, 
+static void draw_selection_screen(const char *matrix_path, char cats[MAX_CATS][64], int cat_count, 
                                   tool_db_entry_t *all_tools, int tool_count,
                                   int selected_cat, int focus)
 {
@@ -139,9 +140,17 @@ static void draw_selection_screen(char cats[MAX_CATS][64], int cat_count,
     ui_center(stdscr, top + 4, "Select package categories to include in your installation.", CP_DIM, A_NORMAL);
 
     int box_w = bw - 10;
-    int box_h = cat_count + 4;
     int box_x = (bw - box_w) / 2;
-    int box_y = top + 6;
+
+    /* Matrix Path Input */
+    int path_y = top + 6;
+    mvwprintw(stdscr, path_y, box_x, "Matrix Path:");
+    if (focus == FOCUS_PATH) wattron(stdscr, A_BOLD | COLOR_PAIR(CP_ACCENT));
+    mvprintw(path_y, box_x + 13, "[ %-50s ]", matrix_path);
+    if (focus == FOCUS_PATH) wattroff(stdscr, A_BOLD | COLOR_PAIR(CP_ACCENT));
+
+    int box_h = cat_count + 4;
+    int box_y = top + 8;
 
     WINDOW *box = newwin(box_h, box_w, box_y, box_x);
     wbkgd(box, COLOR_PAIR(CP_NORMAL));
@@ -238,12 +247,11 @@ static void screen_category_detail(const char *category, tool_db_entry_t *all_to
 
 int screen_selection(installer_state_t *st)
 {
-    (void)st;
     tool_db_entry_t all_tools[256];
-    int tool_count = load_all_tools(all_tools, 256);
+    int tool_count = load_all_tools(st->matrix_path, all_tools, 256);
     
     char cats[MAX_CATS][64];
-    int cat_count = get_categories(cats);
+    int cat_count = get_categories(st->matrix_path, cats);
 
     int selected_cat = 0;
     int focus = FOCUS_LIST;
@@ -259,20 +267,23 @@ int screen_selection(installer_state_t *st)
     while (1) {
         ui_draw_header("Step 4 of 6  —  RPM and Bin Selection");
         ui_draw_footer(footer, 5);
-        draw_selection_screen(cats, cat_count, all_tools, tool_count, selected_cat, focus);
+        draw_selection_screen(st->matrix_path, cats, cat_count, all_tools, tool_count, selected_cat, focus);
 
         int ch = getch();
         switch (ch) {
             case KEY_UP: case 'k':
-                if (focus == FOCUS_LIST) {
+                if (focus == FOCUS_PATH) focus = BTN_BACK;
+                else if (focus == FOCUS_LIST) {
                     if (selected_cat > 0) selected_cat--;
+                    else focus = FOCUS_PATH;
                 } else focus = FOCUS_LIST;
                 break;
             case KEY_DOWN: case 'j':
-                if (focus == FOCUS_LIST) {
+                if (focus == FOCUS_PATH) focus = FOCUS_LIST;
+                else if (focus == FOCUS_LIST) {
                     if (selected_cat < cat_count - 1) selected_cat++;
                     else focus = BTN_BACK;
-                } else focus = FOCUS_LIST;
+                } else focus = FOCUS_PATH;
                 break;
             case '\t': focus = (focus + 1) % NFOCUS; break;
             case ' ':
@@ -300,7 +311,19 @@ int screen_selection(installer_state_t *st)
                 break;
             case 'q': case 'Q': return NAV_QUIT;
             case '\n': case KEY_ENTER:
-                if (focus == FOCUS_LIST) {
+                if (focus == FOCUS_PATH) {
+                    curs_set(1);
+                    int bw = ui_body_width();
+                    int box_w = bw - 10;
+                    int box_x = (bw - box_w) / 2;
+                    int path_y = ui_body_top() + 6;
+                    ui_readline(stdscr, path_y, box_x + 15, 48, st->matrix_path, MAX_PATH_LEN, false);
+                    curs_set(0);
+                    /* Reload data */
+                    tool_count = load_all_tools(st->matrix_path, all_tools, 256);
+                    cat_count = get_categories(st->matrix_path, cats);
+                    selected_cat = 0;
+                } else if (focus == FOCUS_LIST) {
                     screen_category_detail(cats[selected_cat], all_tools, tool_count);
                 } else if (focus == BTN_BACK) return NAV_PREV;
                 else if (focus == BTN_NEXT) {
