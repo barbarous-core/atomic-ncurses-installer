@@ -382,3 +382,27 @@ int ui_menu(const char *title, const char **items, int count, int initial)
     }
 }
 
+void ui_progress_bar(WINDOW *win, int y, int x, int w, int percent, int pair)
+{
+    if (w < 5) return;
+    mvwaddch(win, y, x, '[');
+    mvwaddch(win, y, x + w - 1, ']');
+    
+    int bar_w = w - 2;
+    int filled = (percent * bar_w) / 100;
+    
+    wattron(win, COLOR_PAIR(pair) | A_BOLD);
+    for (int i = 0; i < filled; i++) {
+        mvwaddch(win, y, x + 1 + i, ACS_CKBOARD);
+    }
+    wattroff(win, COLOR_PAIR(pair) | A_BOLD);
+    
+    for (int i = filled; i < bar_w; i++) {
+        mvwaddch(win, y, x + 1 + i, ' ');
+    }
+    
+    char buf[16];
+    snprintf(buf, sizeof(buf), " %3d%% ", percent);
+    mvwaddstr(win, y, x + w + 1, buf);
+}
+

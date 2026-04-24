@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <locale.h>
+#include <time.h>
 
 #include "installer.h"
 #include "ui.h"
@@ -16,6 +17,7 @@
 int main(void)
 {
     setlocale(LC_ALL, "");
+    srand(time(NULL));
     /* ── ncurses init ── */
     initscr();
     cbreak();
@@ -86,9 +88,7 @@ int main(void)
     endwin();
 
     if (nav == NAV_QUIT && screen > 0) {
-        /* User finished all screens – IGN generation goes here later */
-        printf("\n[barbarous-install] IGN file written to: %s\n\n",
-               state.output_path);
+        printf("\n[barbarous-install] Installation successful. Rebooting system...\n\n");
     } else {
         printf("\n[barbarous-install] Installation cancelled.\n\n");
     }

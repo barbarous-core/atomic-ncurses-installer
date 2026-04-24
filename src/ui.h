@@ -74,4 +74,7 @@ void ui_draw_qr_code(WINDOW *win, int y, int x, const char *text);
 /* Show a scrollable menu and return the index of the selected item, or -1 if cancelled */
 int ui_menu(const char *title, const char **items, int count, int initial);
 
+/* Draw a progress bar in window win at (y,x) with width w */
+void ui_progress_bar(WINDOW *win, int y, int x, int w, int percent, int pair);
+
 #endif /* UI_H */

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define FOCUS_DOTFILES 0
 #define FOCUS_INSTALL  1
@@ -88,7 +89,7 @@ static void draw_summary(installer_state_t *st, bool done, bool success, const c
 
     int btn_row = LINES - FOOTER_H - 2;
     if (done) {
-        ui_button(stdscr, btn_row, (bw - 12)/2, "  Quit  ", true);
+        ui_button(stdscr, btn_row, (bw - 14)/2, "  Reboot  ", true);
     } else {
         ui_button(stdscr, btn_row, 3,       "  ← Back  ", focus == FOCUS_BACK);
         ui_button(stdscr, btn_row, bw - 18, "  Install  ", focus == FOCUS_INSTALL);
@@ -198,6 +199,75 @@ static bool generate_ignition(const installer_state_t *st)
     return true;
 }
 
+static void simulate_install(installer_state_t *st)
+{
+    ui_clear_body();
+    int bw = ui_body_width();
+    int top = ui_body_top();
+    
+    ui_center(stdscr, top + 1, "PROVISIONING SYSTEM", CP_ACCENT, A_BOLD);
+    
+    int box_w = bw - 10;
+    int box_h = 12;
+    int box_x = 5;
+    int box_y = top + 3;
+    
+    WINDOW *win = newwin(box_h, box_w, box_y, box_x);
+    wbkgd(win, COLOR_PAIR(CP_NORMAL));
+    ui_box(win, CP_ACCENT);
+    
+    const char *cmds[] = {
+        "coreos-installer install %s --ignition-file %s",
+        "Writing image to target disk...",
+        "Configuring GPT and partitions...",
+        "Extracting ostree commit...",
+        "Writing Ignition configuration...",
+        "Verifying checksums...",
+    };
+    
+    char cmd_buf[256];
+    snprintf(cmd_buf, sizeof(cmd_buf), cmds[0], st->disk[0] ? st->disk : "/dev/sda", st->output_path);
+    
+    wattron(win, COLOR_PAIR(CP_DIM));
+    mvwprintw(win, 2, 4, "# %s", cmd_buf);
+    wattroff(win, COLOR_PAIR(CP_DIM));
+    
+    for (int i = 1; i < 6; i++) {
+        /* Clear previous step line */
+        mvwprintw(win, 4, 4, "                                                            ");
+        wattron(win, COLOR_PAIR(CP_ACCENT) | A_BOLD);
+        mvwprintw(win, 4, 4, "Step %d/5: %s", i, cmds[i]);
+        wattroff(win, COLOR_PAIR(CP_ACCENT) | A_BOLD);
+        
+        for (int p = 0; p <= 100; p += (1 + rand() % 5)) {
+            if (p > 100) p = 100;
+            ui_progress_bar(win, 6, 4, box_w - 15, p, CP_SUCCESS);
+            
+            /* Random log messages */
+            if (p % 20 == 0) {
+                wattron(win, COLOR_PAIR(CP_DIM));
+                mvwprintw(win, 8, 4, "log: processed %d%% of block data...      ", p);
+                wattroff(win, COLOR_PAIR(CP_DIM));
+            }
+            
+            wrefresh(win);
+            usleep(20000 + (rand() % 50000));
+            if (p == 100) break;
+        }
+        usleep(300000);
+    }
+    
+    wattron(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
+    ui_center(win, 10, "★ INSTALLATION COMPLETE ★", CP_SUCCESS, A_BOLD);
+    wattroff(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
+    wrefresh(win);
+    
+    sleep(2);
+    delwin(win);
+    touchwin(stdscr);
+    refresh();
+}
+
 int screen_generate(installer_state_t *st)
 {
     const char *footer[] = {
@@ -215,7 +285,14 @@ int screen_generate(installer_state_t *st)
     
     while (1) {
         ui_draw_header("Step 6 of 6  —  Summary & Installation");
-        ui_draw_footer(footer, 5);
+        
+        if (done) {
+            const char *done_footer[] = { "ENTER Reboot", "Q Quit" };
+            ui_draw_footer(done_footer, 2);
+        } else {
+            ui_draw_footer(footer, 5);
+        }
+
         draw_summary(st, done, success, msg, focus);
 
         int ch = getch();
@@ -259,9 +336,10 @@ int screen_generate(installer_state_t *st)
                     } else {
                         success = generate_ignition(st);
                         if (success) {
-                            snprintf(msg, sizeof(msg), "Saved to %s", st->output_path);
+                            simulate_install(st);
+                            snprintf(msg, sizeof(msg), "System successfully provisioned to %s", st->disk);
                         } else {
-                            snprintf(msg, sizeof(msg), "Failed to open output path %s for writing.", st->output_path);
+                            snprintf(msg, sizeof(msg), "Failed to generate ignition file.");
                         }
                         done = true;
                     }

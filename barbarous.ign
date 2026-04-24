@@ -1,0 +1,37 @@
+{
+  "ignition": { "version": "3.3.0" },
+  "storage": {
+    "files": [
+      {
+        "path": "/etc/hostname",
+        "contents": { "source": "data:,barbarous%0A" },
+        "mode": 420
+      }
+    ],
+    "links": [
+      {
+        "path": "/etc/localtime",
+        "target": "../usr/share/zoneinfo/UTC"
+      }
+    ]
+  },
+  "passwd": {
+    "users": [
+      {
+        "name": "core",
+        "passwordHash": "$6$kfIO07HV0XTpiiX5$vlNXSIhTiEb0HCa/lt3KuYjhf01oyLrie8eBBIgxdQEM1a5DgfMX3Nr/MXGEHNRLMczf.SMxQxhYN225dq4Fo/",
+        "sshAuthorizedKeys": [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII9VighFWTR7abL2duan5B+d7ewvhVf1zeLXNShGs7fX mohamed@fedora" ],
+        "groups": [ "wheel", "sudo" ]
+      }
+    ]
+  },
+  "systemd": {
+    "units": [
+      {
+        "name": "barbarous-provisioning.service",
+        "enabled": true,
+        "contents": "[Unit]\nDescription=Barbarous First Boot Provisioning\nAfter=network-online.target\nWants=network-online.target\nConditionFirstBoot=yes\n\n[Service]\nType=oneshot\nExecStart=/usr/bin/localectl set-x11-keymap us\nExecStart=/usr/bin/rpm-ostree install -y ncdu p7zip   unzip zstd jq htop powertop pass stow grub-reboot usbutils pciutils pcp smartmontools nvme-cli lm_sensors lsof strace iotop gnupg zsh anaconda anaconda-tui tmux ncurses wavemon firewalld tailscale wireguard-tools nmap mtr netcat   socat tcpdump podman flatpak distrobox gcc   c   c++ make python ruby android-tools ffmpeg-free cockpit docker-buildx docker-compose podman-compose libvirt-client daemon-kvm   libvirtd virt-install zfs Duperemove samba mergerfs nfs-utils rclone snapraid sanoid\nExecStart=/usr/bin/echo 'Dotfiles installation enabled'\nExecStart=/usr/bin/echo 'Deploying selected binaries...'\nExecStart=/usr/bin/echo '  Installing binary: eza'\nExecStart=/usr/bin/echo '  Installing binary: lsd'\nExecStart=/usr/bin/echo '  Installing binary: yazi'\nExecStart=/usr/bin/echo '  Installing binary: superfile'\nExecStart=/usr/bin/echo '  Installing binary: zoxide'\nExecStart=/usr/bin/echo '  Installing binary: fd'\nExecStart=/usr/bin/echo '  Installing binary: fzf'\nExecStart=/usr/bin/echo '  Installing binary: dust'\nExecStart=/usr/bin/echo '  Installing binary: broot'\nExecStart=/usr/bin/echo '  Installing binary: bat'\nExecStart=/usr/bin/echo '  Installing binary: ripgrep (rg)'\nExecStart=/usr/bin/echo '  Installing binary: yq'\nExecStart=/usr/bin/echo '  Installing binary: grex'\nExecStart=/usr/bin/echo '  Installing binary: sd'\nExecStart=/usr/bin/echo '  Installing binary: tv'\nExecStart=/usr/bin/echo '  Installing binary: btop'\nExecStart=/usr/bin/echo '  Installing binary: bottom'\nExecStart=/usr/bin/echo '  Installing binary: chezmoi'\nExecStart=/usr/bin/echo '  Installing binary: Zellij'\nExecStart=/usr/bin/echo '  Installing binary: starship'\nExecStart=/usr/bin/echo '  Installing binary: atuin'\nExecStart=/usr/bin/echo '  Installing binary: navi'\nExecStart=/usr/bin/echo '  Installing binary: tealdeer'\nExecStart=/usr/bin/echo '  Installing binary: ttyd'\nExecStart=/usr/bin/echo '  Installing binary: bluetui'\nExecStart=/usr/bin/echo '  Installing binary: impala'\nExecStart=/usr/bin/echo '  Installing binary: croc'\nExecStart=/usr/bin/echo '  Installing binary: speedtest-cli'\nExecStart=/usr/bin/echo '  Installing binary: axel'\nExecStart=/usr/bin/echo '  Installing binary: wiremix'\nExecStart=/usr/bin/echo '  Installing binary: newsboat'\nExecStart=/usr/bin/echo '  Installing binary: lynx'\nExecStart=/usr/bin/echo '  Installing binary: wttr.in'\nExecStart=/usr/bin/echo '  Installing binary: neovim'\nExecStart=/usr/bin/echo '  Installing binary: gh'\nExecStart=/usr/bin/echo '  Installing binary: lazygit'\nExecStart=/usr/bin/echo '  Installing binary: branchlet'\nExecStart=/usr/bin/echo '  Installing binary: cargo'\nExecStart=/usr/bin/echo '  Installing binary: cargo-seek'\nExecStart=/usr/bin/echo '  Installing binary: rust'\nExecStart=/usr/bin/echo '  Installing binary: go'\nExecStart=/usr/bin/echo '  Installing binary: asciinema'\nExecStart=/usr/bin/echo '  Installing binary: pastel'\nExecStart=/usr/bin/echo '  Installing binary: faker'\nExecStart=/usr/bin/echo '  Installing binary: cbonsai'\nExecStart=/usr/bin/echo '  Installing binary: lolcat'\nExecStart=/usr/bin/echo '  Installing binary: hollywood'\nExecStart=/usr/bin/echo '  Installing binary: discordo'\nExecStart=/usr/bin/echo '  Installing binary: jrnl'\nExecStart=/usr/bin/echo '  Installing binary: smassh'\nExecStart=/usr/bin/echo '  Installing binary: stormy'\nExecStart=/usr/bin/echo '  Installing binary: taproom'\nExecStart=/usr/bin/echo '  Installing binary: hygg'\nExecStart=/usr/bin/echo '  Installing binary: fastfetch'\nExecStart=/usr/bin/echo '  Installing binary: neofetch'\nExecStart=/usr/bin/echo '  Installing binary: sl'\nExecStart=/usr/bin/echo '  Installing binary: cmatrix'\nExecStart=/usr/bin/echo '  Installing binary: pipes.sh'\nExecStart=/usr/bin/echo '  Installing binary: figlet'\nExecStart=/usr/bin/echo '  Installing binary: toilet'\nExecStart=/usr/bin/echo '  Installing binary: cava'\nExecStart=/usr/bin/echo '  Installing binary: cacafire'\nExecStart=/usr/bin/echo '  Installing binary: jp2a'\nExecStart=/usr/bin/echo '  Installing binary: cockpit-zfs-manager'\nExecStart=/usr/bin/systemctl reboot\nStandardOutput=journal+console\nRemainAfterExit=yes\n\n[Install]\nWantedBy=multi-user.target"
+      }
+    ]
+  }
+}
