@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ncurses.h>
-#include "qrcodegen.h"
+
 
 #define FLD_HOSTNAME 0
 #define BTN_GEN_KEY  1
@@ -149,12 +149,12 @@ int screen_config(installer_state_t *st)
                     ui_readline(box, 2, 14, 40, st->hostname, MAX_HOSTNAME_LEN, false);
                     delwin(box);
                 } else if (focus == BTN_GEN_KEY) {
-                    ui_msgbox("Please Wait", "Generating ED25519 keypair...", CP_ACCENT);
+                    ui_msgbox_timed("Please Wait", "Generating ED25519 keypair...", CP_ACCENT, 2);
                     if (auto_generate_ssh_key(st->ssh_key, MAX_SSH_LEN)) {
-                        ui_msgbox("Success", "New key generated. PRIVATE KEY saved to /tmp/barbarous_ssh_*. Copy it before rebooting!", CP_SUCCESS);
+                        ui_alert("Success", "New key generated. PRIVATE KEY saved to /tmp/barbarous_ssh_*. Copy it before rebooting!", CP_SUCCESS);
                         focus = BTN_NEXT; /* Success -> Go to Next button */
                     } else {
-                        ui_msgbox("Error", "Failed to run ssh-keygen.", CP_DANGER);
+                        ui_alert("Error", "Failed to run ssh-keygen.", CP_DANGER);
                     }
                 } else if (focus == FLD_SSH_KEY) {
                     WINDOW *box = newwin(10, 74, ui_body_top() + 7, (ui_body_width() - 74) / 2);

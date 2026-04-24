@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 /* ─── Color initialisation ───────────────────────────────────────────────── */
 
@@ -236,6 +237,67 @@ void ui_msgbox(const char *title, const char *msg, int pair)
     ui_center(pop, mh - 2, "[ Press any key ]", CP_DIM, A_BOLD);
     wrefresh(pop);
     wgetch(pop);
+    delwin(pop);
+    touchwin(stdscr);
+    refresh();
+}
+
+void ui_msgbox_timed(const char *title, const char *msg, int pair, int seconds)
+{
+    int mw = (int)strlen(msg) + 6;
+    if ((int)strlen(title) + 6 > mw) mw = (int)strlen(title) + 6;
+    if (mw > COLS - 4) mw = COLS - 4;
+    int mh = 7;
+    int wy = (LINES - mh) / 2;
+    int wx = (COLS - mw) / 2;
+
+    WINDOW *pop = newwin(mh, mw, wy, wx);
+    wbkgd(pop, COLOR_PAIR(CP_NORMAL));
+    ui_box(pop, pair);
+    ui_center(pop, 1, title, pair, A_BOLD);
+    mvwhline(pop, 2, 1, ACS_HLINE, mw - 2);
+    ui_center(pop, 4, msg, CP_NORMAL, 0);
+    wrefresh(pop);
+    
+    sleep(seconds);
+    
+    delwin(pop);
+    touchwin(stdscr);
+    refresh();
+}
+
+void ui_alert(const char *title, const char *msg, int pair)
+{
+    int mw = (int)strlen(msg) + 8;
+    if ((int)strlen(title) + 8 > mw) mw = (int)strlen(title) + 8;
+    if (mw > COLS - 4) mw = COLS - 4;
+    int mh = 9;
+    int wy = (LINES - mh) / 2;
+    int wx = (COLS - mw) / 2;
+
+    WINDOW *pop = newwin(mh, mw, wy, wx);
+    wbkgd(pop, COLOR_PAIR(CP_NORMAL));
+    keypad(pop, TRUE);
+
+    while (1) {
+        werase(pop);
+        ui_box(pop, pair);
+        ui_center(pop, 1, title, pair, A_BOLD);
+        mvwhline(pop, 2, 1, ACS_HLINE, mw - 2);
+        ui_center(pop, 4, msg, CP_NORMAL, 0);
+
+        /* OK button */
+        int btn_y = 6;
+        int btn_w = 10;
+        int btn_x = (mw - btn_w) / 2;
+        ui_button(pop, btn_y, btn_x, "OK", true);
+
+        wrefresh(pop);
+
+        int ch = wgetch(pop);
+        if (ch == '\n' || ch == KEY_ENTER || ch == ' ' || ch == 'o' || ch == 'O') break;
+    }
+
     delwin(pop);
     touchwin(stdscr);
     refresh();

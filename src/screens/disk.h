@@ -1,7 +1,7 @@
 #ifndef SCREEN_DISK_H
 #define SCREEN_DISK_H
 
-#include "installer.h"
+#include "../installer.h"
 
 /* Displays an interactive block-device list.
  * Populates st->disk (e.g. "/dev/sda") on selection.

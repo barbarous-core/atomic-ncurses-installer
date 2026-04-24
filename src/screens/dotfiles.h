@@ -1,7 +1,7 @@
 #ifndef SCREEN_DOTFILES_H
 #define SCREEN_DOTFILES_H
 
-#include "installer.h"
+#include "../installer.h"
 
 /* Displays a list of dotfiles available in the assets directory.
  * Populates st->dotfiles and st->dotfile_count based on user selection.

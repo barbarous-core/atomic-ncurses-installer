@@ -1,7 +1,7 @@
 #ifndef SCREEN_PACKAGES_H
 #define SCREEN_PACKAGES_H
 
-#include "installer.h"
+#include "../installer.h"
 
 /* Displays a list of RPM packages available in the assets directory.
  * Populates st->rpms and st->rpm_count based on user selection.

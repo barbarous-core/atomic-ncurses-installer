@@ -1,7 +1,7 @@
 #ifndef SCREEN_LOCALE_H
 #define SCREEN_LOCALE_H
 
-#include "installer.h"
+#include "../installer.h"
 
 /* Displays the locale configuration screen (keyboard & timezone).
  * Populates st->keyboard and st->timezone on success.

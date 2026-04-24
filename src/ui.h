@@ -55,6 +55,12 @@ int ui_readline(WINDOW *win, int y, int x, int w,
 /* Show a modal message box; press any key to dismiss */
 void ui_msgbox(const char *title, const char *msg, int pair);
 
+/* Show a modal message box for a fixed time (in seconds) */
+void ui_msgbox_timed(const char *title, const char *msg, int pair, int seconds);
+
+/* Show a modal alert box with an OK button */
+void ui_alert(const char *title, const char *msg, int pair);
+
 /* Yes/No confirmation dialog.
  * Returns true if user pressed Y/ENTER, false for N/ESC/Q. */
 bool ui_confirm(const char *title, const char *msg);

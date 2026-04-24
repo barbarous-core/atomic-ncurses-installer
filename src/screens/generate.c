@@ -1,6 +1,6 @@
 #include "generate.h"
 #include "../ui.h"
-#include "../installer.h"
+
 
 #include <ncurses.h>
 #include <stdio.h>
@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <time.h>
 
 #define FOCUS_DOTFILES 0
 #define FOCUS_INSTALL  1
@@ -99,19 +100,82 @@ static void draw_summary(installer_state_t *st, bool done, bool success, const c
     refresh();
 }
 
-static void sanitize_pkg_name(char *dst, const char *src, int max_len)
-{
-    int j = 0;
-    bool in_parens = false;
-    for (int i = 0; src[i] != '\0' && j < max_len - 1; i++) {
-        if (src[i] == '(') in_parens = true;
-        else if (src[i] == ')') in_parens = false;
-        else if (!in_parens) {
-            if (src[i] == '/') dst[j++] = ' ';
-            else dst[j++] = src[i];
-        }
+static void base64_encode(const char *src, char *dst) {
+    static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    int i = 0, j = 0;
+    int len = strlen(src);
+    for (; i < len; i += 3) {
+        unsigned int val = (unsigned char)src[i] << 16;
+        if (i + 1 < len) val |= (unsigned char)src[i + 1] << 8;
+        if (i + 2 < len) val |= (unsigned char)src[i + 2];
+
+        dst[j++] = table[(val >> 18) & 0x3F];
+        dst[j++] = table[(val >> 12) & 0x3F];
+        dst[j++] = (i + 1 < len) ? table[(val >> 6) & 0x3F] : '=';
+        dst[j++] = (i + 2 < len) ? table[val & 0x3F] : '=';
     }
     dst[j] = '\0';
+}
+
+
+static void write_custom_matrix_json(FILE *f, const installer_state_t *st) {
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char date_str[32];
+    strftime(date_str, sizeof(date_str), "%Y-%m-%d", tm);
+
+    char path[512];
+    snprintf(path, sizeof(path), "/home/%s/.barbarous/matrix_%s_%s.csv", 
+             st->username[0] ? st->username : "core", 
+             st->username[0] ? st->username : "core",
+             date_str);
+
+    char csv_data[8192] = {0};
+    strcat(csv_data, "Category,Name,Type\n");
+    
+    for (int i = 0; i < st->rpm_count; i++) {
+        char line[512];
+        snprintf(line, sizeof(line), "Selected,%s,rpm\n", st->rpms[i]);
+        strcat(csv_data, line);
+    }
+    for (int i = 0; i < st->bin_count; i++) {
+        char line[512];
+        snprintf(line, sizeof(line), "Selected,%s,bin\n", st->bins[i]);
+        strcat(csv_data, line);
+    }
+
+    char b64_data[12288] = {0};
+    base64_encode(csv_data, b64_data);
+
+    fprintf(f, "      {\n");
+    fprintf(f, "        \"path\": \"%s\",\n", path);
+    fprintf(f, "        \"contents\": { \"source\": \"data:;base64,%s\" },\n", b64_data);
+    fprintf(f, "        \"mode\": 420,\n");
+    fprintf(f, "        \"overwrite\": true\n");
+    fprintf(f, "      }\n");
+}
+
+static void save_local_matrix_copy(const installer_state_t *st) {
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char date_str[32];
+    strftime(date_str, sizeof(date_str), "%Y-%m-%d", tm);
+
+    char filename[512];
+    snprintf(filename, sizeof(filename), "matrix_%s_%s.csv", 
+             st->username[0] ? st->username : "core", date_str);
+
+    FILE *f = fopen(filename, "w");
+    if (f) {
+        fprintf(f, "Category,Name,Type\n");
+        for (int i = 0; i < st->rpm_count; i++) {
+            fprintf(f, "Selected,%s,rpm\n", st->rpms[i]);
+        }
+        for (int i = 0; i < st->bin_count; i++) {
+            fprintf(f, "Selected,%s,bin\n", st->bins[i]);
+        }
+        fclose(f);
+    }
 }
 
 static bool generate_ignition(const installer_state_t *st)
@@ -129,6 +193,15 @@ static bool generate_ignition(const installer_state_t *st)
     fprintf(f, "        \"path\": \"/etc/hostname\",\n");
     fprintf(f, "        \"contents\": { \"source\": \"data:,%s%%0A\" },\n", st->hostname);
     fprintf(f, "        \"mode\": 420\n");
+    fprintf(f, "      },\n");
+    write_custom_matrix_json(f, st);
+    fprintf(f, "    ],\n");
+    fprintf(f, "    \"directories\": [\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        \"path\": \"/home/%s/.barbarous\",\n", st->username[0] ? st->username : "core");
+    fprintf(f, "        \"mode\": 448,\n");
+    fprintf(f, "        \"user\": { \"name\": \"%s\" },\n", st->username[0] ? st->username : "core");
+    fprintf(f, "        \"group\": { \"name\": \"%s\" }\n", st->username[0] ? st->username : "core");
     fprintf(f, "      }\n");
     fprintf(f, "    ],\n");
     fprintf(f, "    \"links\": [\n");
@@ -164,30 +237,19 @@ static bool generate_ignition(const installer_state_t *st)
     /* Keyboard layout command */
     fprintf(f, "ExecStart=/usr/bin/localectl set-x11-keymap %s\\n", st->keyboard[0] ? st->keyboard : "us");
 
-    /* RPM Installation command */
+    /* RPM Installation from local staging (only if files exist) */
     if (st->rpm_count > 0) {
-        fprintf(f, "ExecStart=/usr/bin/rpm-ostree install -y");
-        for (int i = 0; i < st->rpm_count; i++) {
-            char clean[MAX_RPM_LEN];
-            sanitize_pkg_name(clean, st->rpms[i], MAX_RPM_LEN);
-            fprintf(f, " %s", clean);
-        }
-        fprintf(f, "\\n");
+        fprintf(f, "ExecStart=/usr/bin/bash -c 'if [ -n \\\"$(ls -A /var/lib/barbarous/rpms/*.rpm 2>/dev/null)\\\" ]; then /usr/bin/rpm-ostree install -y /var/lib/barbarous/rpms/*.rpm; fi'\\n");
     }
 
-    /* Dotfiles handling (if enabled, could fetch a repo or script) */
+    /* Dotfiles handling */
     if (st->install_dotfiles) {
         fprintf(f, "ExecStart=/usr/bin/echo 'Dotfiles installation enabled'\\n");
     }
 
-    /* Binary deployment section */
+    /* Binary deployment from local staging (only if files exist) */
     if (st->bin_count > 0) {
-        fprintf(f, "ExecStart=/usr/bin/echo 'Deploying selected binaries...'\\n");
-        for (int i = 0; i < st->bin_count; i++) {
-            /* For now, we echo the requirement. 
-               In a real scenario, this would trigger a download script or copy from media. */
-            fprintf(f, "ExecStart=/usr/bin/echo '  Installing binary: %s'\\n", st->bins[i]);
-        }
+        fprintf(f, "ExecStart=/usr/bin/bash -c 'if [ -d /var/lib/barbarous/bins ] && [ -n \\\"$(ls -A /var/lib/barbarous/bins/ 2>/dev/null)\\\" ]; then /usr/bin/cp -r /var/lib/barbarous/bins/* /usr/local/bin/ && /usr/bin/chmod +x /usr/local/bin/*; fi'\\n");
     }
 
     fprintf(f, "ExecStart=/usr/bin/systemctl reboot\\nStandardOutput=journal+console\\nRemainAfterExit=yes\\n\\n[Install]\\nWantedBy=multi-user.target\"\n");
@@ -197,6 +259,7 @@ static bool generate_ignition(const installer_state_t *st)
 
     fprintf(f, "}\n");
     fclose(f);
+    save_local_matrix_copy(st);
     return true;
 }
 
@@ -269,6 +332,51 @@ static void run_real_install(installer_state_t *st)
     int status = pclose(fp);
     
     if (status == 0) {
+        ui_msgbox("Success", "Base system installed. Copying selected assets...", CP_SUCCESS);
+        
+        /* 1. Mount the target 'root' partition by label */
+        system("mkdir -p /mnt/target_root");
+        system("mount -L root /mnt/target_root 2>/dev/null || mount /dev/disk/by-label/root /mnt/target_root");
+
+        /* 2. Create staging area in /var (relative to the mounted root) */
+        system("mkdir -p /mnt/target_root/var/lib/barbarous/rpms");
+        system("mkdir -p /mnt/target_root/var/lib/barbarous/bins");
+
+        /* 3. Dynamic ISO asset search */
+        const char *iso_search[] = {
+            "/run/media/iso/barbarous-assets",
+            "/run/media/liveuser/fedora-coreos/barbarous-assets",
+            "/mnt/barbarous-assets",
+            "/assets",
+            NULL
+        };
+        
+        const char *iso_base = NULL;
+        for (int i = 0; iso_search[i]; i++) {
+            if (access(iso_search[i], F_OK) == 0) {
+                iso_base = iso_search[i];
+                break;
+            }
+        }
+
+        if (iso_base) {
+            char cp_cmd[512];
+            /* Copy selected RPMs */
+            for (int i = 0; i < st->rpm_count; i++) {
+                snprintf(cp_cmd, sizeof(cp_cmd), "cp %s/rpms/%s*.rpm /mnt/target_root/var/lib/barbarous/rpms/ 2>/dev/null", 
+                         iso_base, st->rpms[i]);
+                system(cp_cmd);
+            }
+            /* Copy selected Binaries */
+            for (int i = 0; i < st->bin_count; i++) {
+                snprintf(cp_cmd, sizeof(cp_cmd), "cp %s/bins/%s /mnt/target_root/var/lib/barbarous/bins/ 2>/dev/null", 
+                         iso_base, st->bins[i]);
+                system(cp_cmd);
+            }
+        }
+
+        system("umount /mnt/target_root");
+        
         wattron(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
         ui_center(win, 10, "★ INSTALLATION COMPLETE ★", CP_SUCCESS, A_BOLD);
         wattroff(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);

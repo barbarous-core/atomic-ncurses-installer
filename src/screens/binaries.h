@@ -1,7 +1,7 @@
 #ifndef SCREEN_BINARIES_H
 #define SCREEN_BINARIES_H
 
-#include "installer.h"
+#include "../installer.h"
 
 /* Displays a list of executable binaries available in the assets directory.
  * Populates st->bins and st->bin_count based on user selection.
