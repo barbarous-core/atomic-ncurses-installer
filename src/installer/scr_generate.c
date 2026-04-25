@@ -116,6 +116,93 @@ static void base64_encode_binary(const unsigned char *src, int len, char *dst) {
     dst[j] = '\0';
 }
 
+static char* generate_custom_csv(const installer_state_t *st) {
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char date_str[32];
+    strftime(date_str, sizeof(date_str), "%Y-%m-%d", tm);
+
+    char *csv_data = malloc(65536);
+    if (!csv_data) return NULL;
+    csv_data[0] = '\0';
+
+    FILE *orig_f = fopen(st->matrix_path, "r");
+    if (!orig_f) orig_f = fopen("matrix.csv", "r");
+    if (!orig_f) orig_f = fopen("assets/matrix.csv", "r");
+
+    if (orig_f) {
+        char line[2048];
+        int row = 0;
+        while (fgets(line, sizeof(line), orig_f)) {
+            int len = strlen(line);
+            while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) {
+                line[len-1] = '\0';
+                len--;
+            }
+            if (len == 0) continue;
+
+            char *c1 = strchr(line, ',');
+            char *c2 = c1 ? strchr(c1 + 1, ',') : NULL;
+            char *c3 = c2 ? strchr(c2 + 1, ',') : NULL;
+
+            if (c1 && c2 && c3) {
+                if (row == 0) {
+                    char prefix[2048];
+                    strncpy(prefix, line, c3 - line);
+                    prefix[c3 - line] = '\0';
+                    char suffix[2048];
+                    strcpy(suffix, c3 + 1);
+                    
+                    char new_line[4096];
+                    snprintf(new_line, sizeof(new_line), "%s,Custom[%s],%s\n", prefix, date_str, suffix);
+                    strcat(csv_data, new_line);
+                } else {
+                    char name[256];
+                    strncpy(name, c1 + 1, c2 - (c1 + 1));
+                    name[c2 - (c1 + 1)] = '\0';
+                    
+                    bool selected = false;
+                    for (int i = 0; i < st->rpm_count; i++) {
+                        if (strcmp(st->rpms[i], name) == 0) { selected = true; break; }
+                    }
+                    if (!selected) {
+                        for (int i = 0; i < st->bin_count; i++) {
+                            if (strcmp(st->bins[i], name) == 0) { selected = true; break; }
+                        }
+                    }
+
+                    char prefix[2048];
+                    strncpy(prefix, line, c3 - line);
+                    prefix[c3 - line] = '\0';
+                    char suffix[2048];
+                    strcpy(suffix, c3 + 1);
+                    
+                    char new_line[4096];
+                    snprintf(new_line, sizeof(new_line), "%s,%s,%s\n", prefix, selected ? "x" : "", suffix);
+                    strcat(csv_data, new_line);
+                }
+            } else {
+                strcat(csv_data, line);
+                strcat(csv_data, "\n");
+            }
+            row++;
+        }
+        fclose(orig_f);
+    } else {
+        strcat(csv_data, "Category,File,Type,Custom\n");
+        for (int i = 0; i < st->rpm_count; i++) {
+            char line[512];
+            snprintf(line, sizeof(line), "Selected,%s,rpm,x\n", st->rpms[i]);
+            strcat(csv_data, line);
+        }
+        for (int i = 0; i < st->bin_count; i++) {
+            char line[512];
+            snprintf(line, sizeof(line), "Selected,%s,bin,x\n", st->bins[i]);
+            strcat(csv_data, line);
+        }
+    }
+    return csv_data;
+}
 
 static void write_custom_matrix_json(FILE *f, const installer_state_t *st) {
     time_t t = time(NULL);
@@ -129,29 +216,24 @@ static void write_custom_matrix_json(FILE *f, const installer_state_t *st) {
              st->username[0] ? st->username : "core",
              date_str);
 
-    char csv_data[8192] = {0};
-    strcat(csv_data, "Category,File,Type,Custom\n");
-    
-    for (int i = 0; i < st->rpm_count; i++) {
-        char line[512];
-        snprintf(line, sizeof(line), "Selected,%s,rpm,A\n", st->rpms[i]);
-        strcat(csv_data, line);
-    }
-    for (int i = 0; i < st->bin_count; i++) {
-        char line[512];
-        snprintf(line, sizeof(line), "Selected,%s,bin,A\n", st->bins[i]);
-        strcat(csv_data, line);
-    }
+    char *csv_data = generate_custom_csv(st);
+    if (!csv_data) return;
 
-    char b64_data[12288] = {0};
-    base64_encode_binary((const unsigned char*)csv_data, strlen(csv_data), b64_data);
+    int b64_len = (strlen(csv_data) / 3 + 1) * 4 + 1;
+    char *b64_data = malloc(b64_len);
+    if (b64_data) {
+        base64_encode_binary((const unsigned char*)csv_data, strlen(csv_data), b64_data);
 
-    fprintf(f, "      {\n");
-    fprintf(f, "        \"path\": \"%s\",\n", path);
-    fprintf(f, "        \"contents\": { \"source\": \"data:;base64,%s\" },\n", b64_data);
-    fprintf(f, "        \"mode\": 420,\n");
-    fprintf(f, "        \"overwrite\": true\n");
-    fprintf(f, "      }\n");
+        fprintf(f, "      {\n");
+        fprintf(f, "        \"path\": \"%s\",\n", path);
+        fprintf(f, "        \"contents\": { \"source\": \"data:;base64,%s\" },\n", b64_data);
+        fprintf(f, "        \"mode\": 420,\n");
+        fprintf(f, "        \"overwrite\": true\n");
+        fprintf(f, "      }\n");
+        
+        free(b64_data);
+    }
+    free(csv_data);
 }
 
 static void save_local_matrix_copy(const installer_state_t *st) {
@@ -166,12 +248,10 @@ static void save_local_matrix_copy(const installer_state_t *st) {
 
     FILE *f = fopen(filename, "w");
     if (f) {
-        fprintf(f, "Category,Name,Type\n");
-        for (int i = 0; i < st->rpm_count; i++) {
-            fprintf(f, "Selected,%s,rpm\n", st->rpms[i]);
-        }
-        for (int i = 0; i < st->bin_count; i++) {
-            fprintf(f, "Selected,%s,bin\n", st->bins[i]);
+        char *csv_data = generate_custom_csv(st);
+        if (csv_data) {
+            fputs(csv_data, f);
+            free(csv_data);
         }
         fclose(f);
     }
