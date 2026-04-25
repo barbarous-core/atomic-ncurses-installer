@@ -272,9 +272,6 @@ static bool generate_ignition(const installer_state_t *st)
     fprintf(f, "        \"groups\": [ \"wheel\", \"sudo\" ]\n");
     fprintf(f, "      }\n");
     fprintf(f, "    ]\n");
-    fprintf(f, "  },\n");
-
-    /* Remove the provisioning service - we now use the manual Phase 2 script */
     fprintf(f, "  }\n");
 
     fprintf(f, "}\n");
@@ -358,12 +355,11 @@ static void run_real_install(installer_state_t *st)
                  "Base system is installed!\n\n"
                  "1. Reboot and login as '%s'\n"
                  "2. Insert the Barbarous ISO\n"
-                 "3. Run: sudo barbarous-setup\n\n"
+                 "3. Run: sudo barbarous-setup-tui\n\n"
                  "This will install all your selected RPMs and Binaries.",
                  st->username[0] ? st->username : "core");
         ui_alert("Next Steps", instructions, CP_ACCENT);
 
-install_finish:
         wattron(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);
         ui_center(win, 10, "★ INSTALLATION COMPLETE ★", CP_SUCCESS, A_BOLD);
         wattroff(win, COLOR_PAIR(CP_SUCCESS) | A_BOLD);

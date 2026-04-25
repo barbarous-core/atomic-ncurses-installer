@@ -36,20 +36,30 @@ static int parse_matrix(const char *matrix_path, edition_t *editions, int *num_e
             char *end = strchr(p, ',');
             if (!end) end = p + strlen(p);
             
-            if (col >= 3 && *num_editions < MAX_EDITIONS) {
-                int len = end - start;
-                while (len > 0 && (start[len-1] == '\n' || start[len-1] == '\r')) len--;
-                if (len > 0) {
-                    strncpy(editions[*num_editions].name, start, len);
-                    editions[*num_editions].name[len] = '\0';
-                    editions[*num_editions].col_idx = col;
-                    (*num_editions)++;
-                }
+            int len = end - start;
+            while (len > 0 && (start[len-1] == '\n' || start[len-1] == '\r')) len--;
+            
+            char val[64];
+            int cp_len = len < 64 ? len : 63;
+            strncpy(val, start, cp_len);
+            val[cp_len] = '\0';
+            
+            if (col == 0 && strcasecmp(val, "Category") != 0) { fclose(f); return -2; }
+            if (col == 1 && strcasecmp(val, "File") != 0 && strcasecmp(val, "Name") != 0) { fclose(f); return -2; }
+            if (col == 2 && strcasecmp(val, "Type") != 0) { fclose(f); return -2; }
+            
+            if (col >= 3 && *num_editions < MAX_EDITIONS && len > 0) {
+                strncpy(editions[*num_editions].name, val, sizeof(editions[*num_editions].name) - 1);
+                editions[*num_editions].name[sizeof(editions[*num_editions].name) - 1] = '\0';
+                editions[*num_editions].col_idx = col;
+                (*num_editions)++;
             }
             if (*end == '\0') break;
             p = end + 1;
             col++;
         }
+        
+        if (col < 3) { fclose(f); return -2; }
     }
 
     /* Parse rows */
@@ -275,7 +285,12 @@ int screen_setup_edition(setup_state_t *st)
     
     int res = parse_matrix(st->matrix_path, editions, &num_editions, tools, &num_tools);
     
-    if (res < 0) {
+    if (res == -2) {
+        char err[512];
+        snprintf(err, sizeof(err), "Invalid matrix format. Expected header:\nCategory,File,Type,Edition1...\nFound in: %s", st->matrix_path);
+        ui_msgbox("Error", err, CP_DANGER);
+        return NAV_PREV;
+    } else if (res < 0) {
         char err[512];
         snprintf(err, sizeof(err), "Could not open matrix CSV file:\n%s", st->matrix_path);
         ui_msgbox("Error", err, CP_DANGER);
