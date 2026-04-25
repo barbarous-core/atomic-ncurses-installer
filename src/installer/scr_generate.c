@@ -100,14 +100,13 @@ static void draw_summary(installer_state_t *st, bool done, bool success, const c
     refresh();
 }
 
-static void base64_encode(const char *src, char *dst) {
+static void base64_encode_binary(const unsigned char *src, int len, char *dst) {
     static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int i = 0, j = 0;
-    int len = strlen(src);
     for (; i < len; i += 3) {
-        unsigned int val = (unsigned char)src[i] << 16;
-        if (i + 1 < len) val |= (unsigned char)src[i + 1] << 8;
-        if (i + 2 < len) val |= (unsigned char)src[i + 2];
+        unsigned int val = src[i] << 16;
+        if (i + 1 < len) val |= src[i + 1] << 8;
+        if (i + 2 < len) val |= src[i + 2];
 
         dst[j++] = table[(val >> 18) & 0x3F];
         dst[j++] = table[(val >> 12) & 0x3F];
@@ -145,7 +144,7 @@ static void write_custom_matrix_json(FILE *f, const installer_state_t *st) {
     }
 
     char b64_data[12288] = {0};
-    base64_encode(csv_data, b64_data);
+    base64_encode_binary((const unsigned char*)csv_data, strlen(csv_data), b64_data);
 
     fprintf(f, "      {\n");
     fprintf(f, "        \"path\": \"%s\",\n", path);
@@ -197,52 +196,78 @@ static bool generate_ignition(const installer_state_t *st)
     write_custom_matrix_json(f, st);
     fprintf(f, ",\n");
 
-    /* Phase 2 Setup Script */
-    char setup_script[4096];
-    snprintf(setup_script, sizeof(setup_script),
-        "#!/bin/bash\n"
-        "echo -e '\\033[1;36m== Barbarous Phase 2 Setup ==\\033[0m'\n"
-        "USER_HOME=\"/home/%s\"\n"
-        "MATRIX=$(ls $USER_HOME/.barbarous/matrix_*.csv 2>/dev/null | head -n 1)\n"
-        "if [ -z \"$MATRIX\" ]; then echo 'Error: Matrix file not found!'; exit 1; fi\n"
-        "\n"
-        "echo 'Searching for Barbarous ISO assets...'\n"
-        "ISO_PATH=\"\"\n"
-        "for p in /run/media/*/barbarous-assets /mnt/barbarous-assets /run/media/iso/barbarous-assets /run/media/liveuser/*/barbarous-assets; do\n"
-        "  if [ -d \"$p\" ]; then ISO_PATH=\"$p\"; break; fi\n"
-        "done\n"
-        "\n"
-        "if [ -z \"$ISO_PATH\" ]; then\n"
-        "  echo 'Please insert the Barbarous ISO and mount it, then press Enter.'\n"
-        "  read\n"
-        "  ISO_PATH=$(find /run/media -name barbarous-assets -type d 2>/dev/null | head -n 1)\n"
-        "fi\n"
-        "\n"
-        "if [ -z \"$ISO_PATH\" ]; then echo 'ISO not found. Exiting.'; exit 1; fi\n"
-        "\n"
-        "echo \"Using assets from: $ISO_PATH\"\n"
-        "grep ',rpm' \"$MATRIX\" | cut -d',' -f2 | while read pkg; do\n"
-        "  echo \"Installing RPM: $pkg\"\n"
-        "  sudo rpm-ostree install --apply-live \"$ISO_PATH/rpms/$pkg\"*.rpm\n"
-        "done\n"
-        "\n"
-        "grep ',bin' \"$MATRIX\" | cut -d',' -f2 | while read b; do\n"
-        "  echo \"Deploying Binary: $b\"\n"
-        "  sudo cp \"$ISO_PATH/bins/$b\" /usr/local/bin/\n"
-        "  sudo chmod +x \"/usr/local/bin/$b\"\n"
-        "done\n"
-        "\n"
-        "echo -e '\\033[1;32mPhase 2 Complete! Packages and binaries are now available.\\033[0m'\n",
-        st->username[0] ? st->username : "core");
+    /* Embed the compiled barbarous-setup-tui binary */
+    FILE *bin_fp = NULL;
+    const char *search_paths[] = {
+        "barbarous-setup-tui",
+        "/usr/local/bin/barbarous-setup-tui",
+        "/run/media/iso/barbarous-assets/bin/barbarous-setup-tui",
+        "/mnt/barbarous-assets/bin/barbarous-setup-tui",
+        "/run/media/liveuser/barbarous-assets/bin/barbarous-setup-tui",
+        NULL
+    };
 
-    char b64_script[8192];
-    base64_encode(setup_script, b64_script);
+    for (int i = 0; search_paths[i] != NULL; i++) {
+        bin_fp = fopen(search_paths[i], "rb");
+        if (bin_fp) break;
+    }
+    
+    if (!bin_fp) {
+        char exe_path[1024];
+        ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+        if (len > 0) {
+            exe_path[len] = '\0';
+            char *last_slash = strrchr(exe_path, '/');
+            if (last_slash) {
+                *last_slash = '\0';
+                char setup_path[1024];
+                snprintf(setup_path, sizeof(setup_path), "%s/barbarous-setup-tui", exe_path);
+                bin_fp = fopen(setup_path, "rb");
+            }
+        }
+    }
+    
+    if (bin_fp) {
+        fseek(bin_fp, 0, SEEK_END);
+        long bin_size = ftell(bin_fp);
+        fseek(bin_fp, 0, SEEK_SET);
 
-    fprintf(f, "      {\n");
-    fprintf(f, "        \"path\": \"/usr/local/bin/barbarous-setup\",\n");
-    fprintf(f, "        \"contents\": { \"source\": \"data:;base64,%s\" },\n", b64_script);
-    fprintf(f, "        \"mode\": 493\n"); // 0755
-    fprintf(f, "      }\n");
+        unsigned char *bin_data = malloc(bin_size);
+        if (bin_data) {
+            fread(bin_data, 1, bin_size, bin_fp);
+            
+            long b64_len = (bin_size / 3 + 1) * 4 + 1;
+            char *b64_data = malloc(b64_len);
+            
+            if (b64_data) {
+                base64_encode_binary(bin_data, bin_size, b64_data);
+                
+                fprintf(f, "      {\n");
+                fprintf(f, "        \"path\": \"/usr/local/bin/barbarous-setup-tui\",\n");
+                fprintf(f, "        \"contents\": { \"source\": \"data:;base64,%s\" },\n", b64_data);
+                fprintf(f, "        \"mode\": 493\n"); // 0755
+                fprintf(f, "      }\n");
+                
+                free(b64_data);
+            } else {
+                fclose(bin_fp);
+                free(bin_data);
+                fclose(f);
+                return false;
+            }
+            free(bin_data);
+        } else {
+            fclose(bin_fp);
+            fclose(f);
+            return false;
+        }
+        fclose(bin_fp);
+    } else {
+        // Could not find binary
+        ui_msgbox("Error", "Could not find barbarous-setup-tui! (searched ISO assets, /usr/local/bin, and local)", CP_DANGER);
+        fclose(f);
+        return false;
+    }
     fprintf(f, "    ],\n");
     fprintf(f, "    \"directories\": [\n");
     fprintf(f, "      {\n");
