@@ -295,11 +295,21 @@ int screen_setup_edition(setup_state_t *st)
         snprintf(err, sizeof(err), "Could not open matrix CSV file:\n%s", st->matrix_path);
         ui_msgbox("Error", err, CP_DANGER);
         return NAV_PREV;
-    } else if (res == 0 || num_editions == 0) {
-        char err[512];
-        snprintf(err, sizeof(err), "Could not parse editions from matrix CSV:\n%s", st->matrix_path);
-        ui_msgbox("Error", err, CP_DANGER);
-        return NAV_PREV;
+    } else if (res == 0 && num_editions == 0) {
+        /* Pre-selected configuration (from installer) */
+        st->rpm_count = 0;
+        st->bin_count = 0;
+        st->dotfile_count = 0;
+        for (int i = 0; i < num_tools; i++) {
+            if (strcasecmp(tools[i].type, "rpm") == 0 && st->rpm_count < MAX_RPMS) {
+                strncpy(st->rpms[st->rpm_count++], tools[i].name, MAX_RPM_LEN - 1);
+            } else if (strcasecmp(tools[i].type, "bin") == 0 && st->bin_count < MAX_BINS) {
+                strncpy(st->bins[st->bin_count++], tools[i].name, MAX_BIN_LEN - 1);
+            } else if (strcasecmp(tools[i].type, "dotfile") == 0 && st->dotfile_count < MAX_DOTFILES) {
+                strncpy(st->dotfiles[st->dotfile_count++], tools[i].name, MAX_DOTFILE_LEN - 1);
+            }
+        }
+        return NAV_NEXT;
     }
 
     /* Set default selections based on st->edition if set, else none */

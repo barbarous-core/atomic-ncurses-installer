@@ -10,7 +10,7 @@ static void draw_paths(setup_state_t *st, int field)
     int top = ui_body_top();
 
     int boxw = bw - 8;
-    int boxh = 14;
+    int boxh = 16;
     int boxy = top + (bh - boxh) / 2;
     int boxx = 4;
 
@@ -39,7 +39,11 @@ static void draw_paths(setup_state_t *st, int field)
     mvwprintw(win, ly, lx, "Dotfiles Dest:");
     ui_button(win, ly, lx + 20, st->dotfiles_dest_path, field == 3);
 
-    ui_button(win, boxh - 2, (boxw / 2) - 10, "  CONTINUE  ", field == 4);
+    ly += 2;
+    mvwprintw(win, ly, lx, "Matrix CSV Path:");
+    ui_button(win, ly, lx + 20, st->matrix_path, field == 4);
+
+    ui_button(win, boxh - 2, (boxw / 2) - 10, "  CONTINUE  ", field == 5);
 
     wrefresh(win);
     delwin(win);
@@ -62,15 +66,15 @@ int screen_setup_paths(setup_state_t *st)
         int ch = getch();
         switch (ch) {
             case KEY_UP:
-                field = (field + 4) % 5;
+                field = (field + 5) % 6;
                 break;
             case KEY_DOWN: case '\t':
-                field = (field + 1) % 5;
+                field = (field + 1) % 6;
                 break;
             case KEY_LEFT:
                 return NAV_PREV;
             case '\n': case KEY_ENTER:
-                if (field == 4) return NAV_NEXT;
+                if (field == 5) return NAV_NEXT;
                 
                 /* Edit field */
                 {
@@ -90,6 +94,7 @@ int screen_setup_paths(setup_state_t *st)
                     if (field == 1) buf = st->bin_dest_path;
                     if (field == 2) buf = st->rpm_dest_path;
                     if (field == 3) buf = st->dotfiles_dest_path;
+                    if (field == 4) buf = st->matrix_path;
                     
                     ui_readline(edit, 0, 0, bw - 40, buf, MAX_PATH_LEN, false);
                     curs_set(0);

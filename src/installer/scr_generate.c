@@ -130,16 +130,16 @@ static void write_custom_matrix_json(FILE *f, const installer_state_t *st) {
              date_str);
 
     char csv_data[8192] = {0};
-    strcat(csv_data, "Category,Name,Type\n");
+    strcat(csv_data, "Category,File,Type,Custom\n");
     
     for (int i = 0; i < st->rpm_count; i++) {
         char line[512];
-        snprintf(line, sizeof(line), "Selected,%s,rpm\n", st->rpms[i]);
+        snprintf(line, sizeof(line), "Selected,%s,rpm,A\n", st->rpms[i]);
         strcat(csv_data, line);
     }
     for (int i = 0; i < st->bin_count; i++) {
         char line[512];
-        snprintf(line, sizeof(line), "Selected,%s,bin\n", st->bins[i]);
+        snprintf(line, sizeof(line), "Selected,%s,bin,A\n", st->bins[i]);
         strcat(csv_data, line);
     }
 
