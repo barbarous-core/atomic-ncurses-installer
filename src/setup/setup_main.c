@@ -9,6 +9,7 @@
 #include "scr_setup_welcome.h"
 #include "scr_setup_paths.h"
 #include "scr_setup_matrix.h"
+#include "scr_setup_edition.h"
 #include "scr_setup_apply.h"
 
 int main(void)
@@ -55,6 +56,9 @@ int main(void)
                 nav = screen_setup_matrix(&state);
                 break;
             case 3:
+                nav = screen_setup_edition(&state);
+                break;
+            case 4:
                 nav = screen_setup_apply(&state);
                 break;
 

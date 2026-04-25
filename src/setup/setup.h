@@ -27,6 +27,7 @@ typedef struct {
 
     char matrix_path[MAX_PATH_LEN];
     char matrix_url[MAX_URL_LEN];
+    char edition[64];
 
     /* Data from matrix.csv */
     char rpms[MAX_RPMS][MAX_RPM_LEN];

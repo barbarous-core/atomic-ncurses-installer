@@ -34,7 +34,7 @@ int screen_setup_matrix(setup_state_t *st)
     menu_items[item_count++] = "Load from ISO (/run/media/iso/matrix.csv)";
     menu_items[item_count++] = "Load from URL (Custom)";
 
-    ui_draw_header("Step 2 of 3  —  Matrix Configuration");
+    ui_draw_header("Step 2 of 4  —  Matrix Configuration");
     int sel = ui_menu("Select Matrix Source", menu_items, item_count, 0);
 
     if (sel == -1) return NAV_PREV;
@@ -46,7 +46,7 @@ int screen_setup_matrix(setup_state_t *st)
     } else {
         /* URL Selection */
         ui_clear_body();
-        ui_draw_header("Step 2 of 3  —  Matrix URL");
+        ui_draw_header("Step 2 of 4  —  Matrix URL");
         WINDOW *win = newwin(7, ui_body_width() - 10, ui_body_top() + 5, 5);
         ui_box(win, CP_BORDER);
         ui_center(win, 1, "Enter Matrix CSV URL", CP_ACCENT, A_BOLD);

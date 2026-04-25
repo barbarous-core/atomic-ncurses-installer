@@ -1,0 +1,124 @@
+Category,File,Type,Core,Station,Studio,Edge,Lab,Touch
+File Management & Navigation,eza,bin,x,x,x,x,x,x
+File Management & Navigation,lsd,bin,x,x,x,x,x,x
+File Management & Navigation,yazi,bin,x,x,x,x,x,x
+File Management & Navigation,superfile,bin,x,x,x,x,x,x
+File Management & Navigation,zoxide,bin,x,x,x,x,x,x
+File Management & Navigation,fd,bin,x,x,x,x,x,x
+File Management & Navigation,fzf,bin,x,x,x,x,x,x
+File Management & Navigation,ncdu,rpm,x,x,x,x,x,x
+File Management & Navigation,dust,bin,x,x,x,x,x,x
+File Management & Navigation,broot,bin,x,x,x,x,x,x
+File Management & Navigation,p7zip / unzip,rpm,x,x,x,x,x,x
+File Management & Navigation,zstd,rpm,x,x,x,x,x,x
+Text & Search Tools,bat,bin,x,x,x,x,x,x
+Text & Search Tools,ripgrep (rg),bin,x,x,x,x,x,x
+Text & Search Tools,jq,rpm,x,x,x,x,x,x
+Text & Search Tools,yq,bin,x,x,x,x,x,x
+Text & Search Tools,grex,bin,x,x,x,x,x,x
+Text & Search Tools,sd,bin,x,x,x,x,x,x
+Text & Search Tools,tv,bin,x,x,x,x,x,x
+System Management & Monitoring,btop,bin,x,x,x,x,x,x
+System Management & Monitoring,htop,rpm,x,x,x,x,x,x
+System Management & Monitoring,powertop,rpm,x,x,x,x,x,x
+System Management & Monitoring,bottom,bin,x,x,x,x,x,x
+System Management & Monitoring,pass,rpm,x,x,x,x,x,x
+System Management & Monitoring,stow,rpm,x,x,x,x,x,x
+System Management & Monitoring,chezmoi,bin,x,x,x,x,x,x
+System Management & Monitoring,grub-reboot,rpm,x,x,x,x,x,x
+System Management & Monitoring,usbutils,rpm,x,x,x,x,x,x
+System Management & Monitoring,pciutils,rpm,x,x,x,x,x,x
+System Management & Monitoring,pcp,rpm,x,x,x,x,x,x
+System Management & Monitoring,smartmontools,rpm,x,x,x,x,x,x
+System Management & Monitoring,nvme-cli,rpm,x,x,x,x,x,x
+System Management & Monitoring,lm_sensors,rpm,x,x,x,x,x,x
+System Management & Monitoring,lsof,rpm,x,x,x,x,x,x
+System Management & Monitoring,strace,rpm,x,x,x,x,x,x
+System Management & Monitoring,iotop,rpm,x,x,x,x,x,x
+System Management & Monitoring,gnupg,rpm,x,x,x,x,x,x
+System Management & Monitoring,barbarous-install-tui,bin,x,x,x,x,x,x
+"Shell, Terminal & Environment",zsh,rpm,x,x,x,x,x,x
+"Shell, Terminal & Environment",anaconda,rpm,x,x,x,x,x,x
+"Shell, Terminal & Environment",anaconda-tui,rpm,x,x,x,x,x,x
+"Shell, Terminal & Environment",ohmyzsh,dotfile,x,x,x,x,x,x
+"Shell, Terminal & Environment",tmux,rpm,x,x,x,x,x,x
+"Shell, Terminal & Environment",Zellij,bin,x,x,x,x,x,x
+"Shell, Terminal & Environment",starship,bin,x,x,x,x,x,x
+"Shell, Terminal & Environment",atuin,bin,x,x,x,x,x,x
+"Shell, Terminal & Environment",navi,bin,x,x,x,x,x,x
+"Shell, Terminal & Environment",tealdeer,bin,x,x,x,x,x,x
+"Shell, Terminal & Environment",brew,dotfile,x,x,x,x,x,x
+"Shell, Terminal & Environment",ttyd,bin,x,x,x,x,x,x
+"Shell, Terminal & Environment",ncurses,rpm,x,x,x,x,x,x
+Networking & Internet,bluetui,bin,x,x,x,x,x,x
+Networking & Internet,impala,bin,x,x,x,x,x,x
+Networking & Internet,croc,bin,x,x,x,x,x,x
+Networking & Internet,speedtest-cli,bin,x,x,x,x,x,x
+Networking & Internet,axel,bin,x,x,x,x,x,x
+Networking & Internet,wiremix,bin,x,x,x,x,x,x
+Networking & Internet,newsboat,bin,x,x,x,x,x,x
+Networking & Internet,lynx,bin,x,x,x,x,x,x
+Networking & Internet,wttr.in,bin,x,x,x,x,x,x
+Networking & Internet,wavemon,rpm,x,x,x,x,x,x
+Networking & Internet,firewalld,rpm,x,x,x,x,x,x
+Networking & Internet,tailscale,rpm,x,x,x,x,x,x
+Networking & Internet,wireguard-tools,rpm,x,x,x,x,x,x
+Networking & Internet,nmap,rpm,x,x,x,x,x,x
+Networking & Internet,mtr,rpm,x,x,x,x,x,x
+Networking & Internet,netcat / socat,rpm,x,x,x,x,x,x
+Networking & Internet,tcpdump,rpm,x,x,x,x,x,x
+"Development, Git & Containers",neovim,bin,x,x,x,x,x,x
+"Development, Git & Containers",gh,bin,x,x,x,x,x,x
+"Development, Git & Containers",lazygit,bin,x,x,x,x,x,x
+"Development, Git & Containers",branchlet,bin,x,x,x,x,x,x
+"Development, Git & Containers",podman,rpm,x,x,x,x,x,x
+"Development, Git & Containers",flatpak,rpm,x,x,x,x,x,x
+"Development, Git & Containers",distrobox,rpm,x,x,x,x,x,x
+"Development, Git & Containers",cargo,bin,x,x,x,x,x,x
+"Development, Git & Containers",cargo-seek,bin,x,x,x,x,x,x
+"Development, Git & Containers",gcc / c / c++,rpm,x,x,x,x,x,x
+"Development, Git & Containers",make,rpm,x,x,x,x,x,x
+"Development, Git & Containers",rust,bin,x,x,x,x,x,x
+"Development, Git & Containers",go,bin,x,x,x,x,x,x
+"Development, Git & Containers",python,rpm,x,x,x,x,x,x
+"Development, Git & Containers",ruby,rpm,x,x,x,x,x,x
+"Development, Git & Containers",android-tools,rpm,x,x,x,x,x,x
+"Media, Extras & Fun",ffmpeg-free,rpm,x,x,x,x,x,x
+"Media, Extras & Fun",asciinema,bin,x,x,x,x,x,x
+"Media, Extras & Fun",pastel,bin,x,x,x,x,x,x
+"Media, Extras & Fun",faker,bin,x,x,x,x,x,x
+"Media, Extras & Fun",cbonsai,bin,x,x,x,x,x,x
+"Media, Extras & Fun",lolcat,bin,x,x,x,x,x,x
+"Media, Extras & Fun",hollywood,bin,x,x,x,x,x,x
+"Media, Extras & Fun",discordo,bin,x,x,x,x,x,x
+"Media, Extras & Fun",jrnl,bin,x,x,x,x,x,x
+"Media, Extras & Fun",smassh,bin,x,x,x,x,x,x
+"Media, Extras & Fun",stormy,bin,x,x,x,x,x,x
+"Media, Extras & Fun",taproom,bin,x,x,x,x,x,x
+"Media, Extras & Fun",hygg,bin,x,x,x,x,x,x
+"Media, Extras & Fun",fastfetch,bin,x,x,x,x,x,x
+"Media, Extras & Fun",neofetch,bin,x,x,x,x,x,x
+"Media, Extras & Fun",sl,bin,x,x,x,x,x,x
+"Media, Extras & Fun",cmatrix,bin,x,x,x,x,x,x
+"Media, Extras & Fun",pipes.sh,bin,x,x,x,x,x,x
+"Media, Extras & Fun",figlet,bin,x,x,x,x,x,x
+"Media, Extras & Fun",toilet,bin,x,x,x,x,x,x
+"Media, Extras & Fun",cava,bin,x,x,x,x,x,x
+"Media, Extras & Fun",cacafire,bin,x,x,x,x,x,x
+"Media, Extras & Fun",jp2a,bin,x,x,x,x,x,x
+"Storage, Server & Virtualization",cockpit,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",cockpit-zfs-manager,bin,x,x,x,x,x,x
+"Storage, Server & Virtualization",docker-buildx,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",docker-compose,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",podman-compose,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",libvirt-client,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",daemon-kvm / libvirtd,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",virt-install,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",zfs,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",Duperemove,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",samba,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",mergerfs,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",nfs-utils,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",rclone,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",snapraid,rpm,x,x,x,x,x,x
+"Storage, Server & Virtualization",sanoid,rpm,x,x,x,x,x,x

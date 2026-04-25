@@ -17,6 +17,7 @@ static void draw_progress(setup_state_t *st, const char *msg, int percent)
     
     mvwprintw(win, 3, 4, "ISO: %s", st->iso_path);
     mvwprintw(win, 4, 4, "Matrix: %s", st->matrix_path);
+    mvwprintw(win, 5, 4, "Edition: %s", st->edition);
 
     ui_center(win, 6, msg, CP_NORMAL, A_NORMAL);
     ui_progress_bar(win, 8, 4, bw - 28, percent, CP_SUCCESS);
@@ -27,7 +28,7 @@ static void draw_progress(setup_state_t *st, const char *msg, int percent)
 
 int screen_setup_apply(setup_state_t *st)
 {
-    ui_draw_header("Step 3 of 3  —  Finalizing Setup");
+    ui_draw_header("Step 4 of 4  —  Finalizing Setup");
     
     if (!ui_confirm("Confirm Setup", "Are you sure you want to apply the system setup? This will modify your system layers and files.")) {
         return NAV_PREV;
