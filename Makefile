@@ -1,27 +1,48 @@
 CC      := gcc
 CFLAGS  := -Wall -Wextra -std=c11 -g \
-            -I src \
+            -I src/common -I src/installer -I src/setup \
             $(shell pkg-config --cflags ncursesw || pkg-config --cflags ncurses)
 LDFLAGS := $(shell pkg-config --libs ncursesw || pkg-config --libs ncurses)
 
-TARGET  := barbarous-install-tui
+INSTALLER_TARGET := barbarous-install-tui
+SETUP_TARGET     := barbarous-setup-tui
+
 SRCDIR  := src
-SRCS    := $(shell find $(SRCDIR) -name '*.c')
-OBJS    := $(SRCS:.c=.o)
+COMMON_DIR    := $(SRCDIR)/common
+INSTALLER_DIR := $(SRCDIR)/installer
+SETUP_DIR     := $(SRCDIR)/setup
 
-.PHONY: all clean run
+# Common files used by both
+COMMON_SRCS := $(wildcard $(COMMON_DIR)/*.c)
+COMMON_OBJS := $(COMMON_SRCS:.c=.o)
 
-all: $(TARGET)
+# Installer specific
+INSTALLER_SRCS := $(wildcard $(INSTALLER_DIR)/*.c)
+INSTALLER_OBJS := $(INSTALLER_SRCS:.c=.o) $(COMMON_OBJS)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+# Setup specific
+SETUP_SRCS := $(wildcard $(SETUP_DIR)/*.c)
+SETUP_OBJS     := $(SETUP_SRCS:.c=.o) $(COMMON_OBJS)
+
+.PHONY: all clean run-install run-setup
+
+all: $(INSTALLER_TARGET) $(SETUP_TARGET)
+
+$(INSTALLER_TARGET): $(INSTALLER_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(INSTALLER_OBJS) $(LDFLAGS)
+
+$(SETUP_TARGET): $(SETUP_OBJS)
+	$(CC) $(CFLAGS) -o $@ $(SETUP_OBJS) $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-run: all
-	./$(TARGET)
+run-install: $(INSTALLER_TARGET)
+	./$(INSTALLER_TARGET)
+
+run-setup: $(SETUP_TARGET)
+	./$(SETUP_TARGET)
 
 clean:
 	find $(SRCDIR) -name '*.o' -delete
-	rm -f $(TARGET)
+	rm -f $(INSTALLER_TARGET) $(SETUP_TARGET)
