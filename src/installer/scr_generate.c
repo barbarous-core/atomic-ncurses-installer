@@ -285,6 +285,17 @@ static bool generate_ignition(const installer_state_t *st)
     fprintf(f, "    ]\n");
     fprintf(f, "  },\n");
 
+    /* Systemd: Automount ISO on first boot */
+    fprintf(f, "  \"systemd\": {\n");
+    fprintf(f, "    \"units\": [\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        \"name\": \"automount-barbarous-iso.service\",\n");
+    fprintf(f, "        \"enabled\": true,\n");
+    fprintf(f, "        \"contents\": \"[Unit]\\nDescription=Automount Barbarous ISO\\nAfter=local-fs.target\\n\\n[Service]\\nType=oneshot\\nExecStart=/bin/bash -c \\\"mkdir -p /run/media/iso; for dev in /dev/sr* /dev/sd* /dev/nvme* /dev/vd*; do mount -o ro $dev /run/media/iso 2>/dev/null && [ -d /run/media/iso/barbarous-assets ] && exit 0; umount /run/media/iso 2>/dev/null; done\\\"\\nRemainAfterExit=yes\\n\\n[Install]\\nWantedBy=multi-user.target\\n\"\n");
+    fprintf(f, "      }\n");
+    fprintf(f, "    ]\n");
+    fprintf(f, "  },\n");
+
     /* Passwd: User configuration */
     fprintf(f, "  \"passwd\": {\n");
     fprintf(f, "    \"users\": [\n");
