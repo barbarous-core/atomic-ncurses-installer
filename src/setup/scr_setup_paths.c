@@ -1,5 +1,5 @@
 #include "scr_setup_paths.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include <string.h>
 
 static void draw_paths(setup_state_t *st, int field)
@@ -55,7 +55,7 @@ int screen_setup_paths(setup_state_t *st)
     };
 
     while (1) {
-        ui_draw_header("Asset Paths");
+        ui_draw_header("Step 1 of 3  —  Asset Paths");
         ui_draw_footer(footer, 3);
         draw_paths(st, field);
 

@@ -1,5 +1,5 @@
 #include "scr_packages.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include "installer.h"
 
 #include <ncurses.h>

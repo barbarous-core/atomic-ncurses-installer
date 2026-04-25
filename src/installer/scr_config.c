@@ -1,5 +1,5 @@
 #include "scr_config.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include "installer.h"
 #include <stdio.h>
 #include <stdlib.h>

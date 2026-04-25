@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "installer.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include "scr_welcome.h"
 #include "scr_locale.h"
 #include "scr_edition.h"
@@ -51,6 +51,8 @@ int main(void)
     int nav    = NAV_NEXT;
 
     while (1) {
+        clear();
+        refresh();
         switch (screen) {
             case 0:
                 nav = screen_welcome(&state);

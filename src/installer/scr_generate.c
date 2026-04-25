@@ -1,5 +1,5 @@
 #include "scr_generate.h"
-#include "ui.h"
+#include "../common/ui.h"
 
 
 #include <ncurses.h>

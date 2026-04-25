@@ -1,5 +1,5 @@
 #include "scr_welcome.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include "installer.h"
 #include <ncurses.h>
 #include <string.h>
@@ -75,7 +75,7 @@ int screen_welcome(installer_state_t *st)
         "Q     Quit",
     };
 
-    ui_draw_header("Welcome");
+    ui_draw_header("Welcome to Installer");
     ui_draw_footer(footer, 2);
     draw_welcome();
 
@@ -87,7 +87,7 @@ int screen_welcome(installer_state_t *st)
             case 'q': case 'Q': case 27:   /* ESC */
                 return NAV_QUIT;
             case KEY_RESIZE:
-                ui_draw_header("Welcome");
+                ui_draw_header("Welcome to Installer");
                 ui_draw_footer(footer, 2);
                 draw_welcome();
                 break;

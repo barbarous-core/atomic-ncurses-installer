@@ -1,5 +1,5 @@
 #include "scr_selection.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 #include "scr_setup_apply.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include <unistd.h>
 
 static void draw_progress(setup_state_t *st, const char *msg, int percent)
@@ -27,7 +27,7 @@ static void draw_progress(setup_state_t *st, const char *msg, int percent)
 
 int screen_setup_apply(setup_state_t *st)
 {
-    ui_draw_header("Applying Setup");
+    ui_draw_header("Step 3 of 3  —  Finalizing Setup");
     
     if (!ui_confirm("Confirm Setup", "Are you sure you want to apply the system setup? This will modify your system layers and files.")) {
         return NAV_PREV;

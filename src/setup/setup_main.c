@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "setup.h"
-#include "ui.h"
+#include "../common/ui.h"
 #include "scr_setup_welcome.h"
 #include "scr_setup_paths.h"
 #include "scr_setup_matrix.h"
@@ -42,6 +42,8 @@ int main(void)
     int nav    = NAV_NEXT;
 
     while (1) {
+        clear();
+        refresh();
         switch (screen) {
             case 0:
                 nav = screen_setup_welcome(&state);
